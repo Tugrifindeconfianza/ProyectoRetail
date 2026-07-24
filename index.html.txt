@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Layout Outbound Retail</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <div class="page-header">
+    <div class="title-block">
+      <h1>Layout Outbound Retail</h1>
+      <p>Reporte de despachos Outbound Retail.</p>
+    </div>
+
+    <div class="header-stamp" id="lastSaved">
+      Estado: pendiente de guardado
+    </div>
+  </div>
+
+  <div class="leaders-panel">
+    <div class="leaders-panel-header">
+      <div>
+        <h2>Equipo Responsable</h2>
+        <p>Visual ejecutivo para seguimiento operativo y control del layout.</p>
+      </div>
+    </div>
+
+    <div id="leaders" class="leaders-grid"></div>
+  </div>
+
+  <div class="dashboard-shell">
+    <div class="controls-grid">
+      <div class="field">
+        <label>CLIENTE</label>
+        <select id="clientSelect"></select>
+      </div>
+
+      <div class="field">
+        <label>ESTADO</label>
+        <select id="statusSelect"></select>
+      </div>
+
+      <div class="field">
+        <label>COLUMNA</label>
+        <select id="columnSelect"></select>
+      </div>
+
+      <div class="field">
+        <label>MODO</label>
+        <div class="checkbox-field">
+          <input type="checkbox" id="fullColumnMode">
+          <span>Aplicar a toda la columna</span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>ACCIÓN</label>
+        <button class="btn-primary" onclick="assignClient()">Asignar</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-secondary" onclick="saveLayout()">Guardar</button>
+      <button class="btn-secondary" onclick="resetLayout()">Limpiar todo</button>
+    </div>
+
+    <div class="status-line" id="status"></div>
+
+    <div class="metrics" id="metrics"></div>
+
+    <div class="legend">
+      <div class="legend-item"><span class="dot" style="background:#f59e0b"></span>PENDIENTE</div>
+      <div class="legend-item"><span class="dot" style="background:#3b82f6"></span>EN PROGRESO</div>
+      <div class="legend-item"><span class="dot" style="background:#10b981"></span>DESPACHADO</div>
+      <div class="legend-item"><span class="dot" style="background:#64748b"></span>DISPONIBLE</div>
+    </div>
+
+    <div class="scene">
+      <div id="layout" class="layout"></div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" onclick="backdropClose(event)">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Editar posición</h3>
+        <p id="modalPosition"></p>
+      </div>
+
+      <div class="modal-body">
+        <div class="field">
+          <label>CLIENTE</label>
+          <select id="modalClientSelect"></select>
+        </div>
+
+        <div class="field">
+          <label>ESTADO</label>
+          <select id="modalStatusSelect"></select>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+        <button class="btn-secondary danger-btn" onclick="removeCellFromModal()">Eliminar</button>
+        <button class="btn-primary" onclick="saveCellFromModal()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
