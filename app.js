@@ -407,9 +407,8 @@ function saveLayout() {
   localStorage.setItem('layoutData', JSON.stringify(state));
 
   const now = new Date().toLocaleString('es-PE');
-  document.getElementById('lastSaved').textContent = `Último guardado local: ${now}`;
-  setStatus('Layout guardado correctamente en el navegador.');
-}
+  setStatus(`Último guardado: ${now}`);
+  }
 
 function resetLayout() {
   const ok = confirm('¿Deseas limpiar todo el layout?');
