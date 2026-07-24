@@ -37,9 +37,13 @@ const fallbackConfig = {
   rows: 5,
   statusOptions: ['PENDIENTE', 'EN PROGRESO', 'DESPACHADO'],
   clients: [
-    { id: 'cliente-1', name: 'Cliente 1', logo: makeLogo('Cliente 1') },
-    { id: 'cliente-2', name: 'Cliente 2', logo: makeLogo('Cliente 2') },
-    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('Cliente 3') }
+    { id: 'cliente-1', name: 'Cliente 1', logo: makeLogo('PROMART') },
+    { id: 'cliente-2', name: 'Cliente 2', logo: makeLogo('SODIMAC') },
+    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('TOTTUS') },
+    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('CENCOSUD') },
+    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('SSPP') },
+    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('MAYORSA') },
+    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('CORP. VEGA') }
   ],
   leaders: [
     { name: 'Responsable 1', photo: makePhoto('R1') },
