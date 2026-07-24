@@ -66,69 +66,50 @@ body{
 
 /* EQUIPO RESPONSABLE */
 
-.leaders-panel{
-  margin-bottom:20px;
-  padding:18px;
-  border-radius:22px;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 20px 40px rgba(0,0,0,.28);
-  backdrop-filter:blur(10px);
+.header-stamp.leaders-header{
+  min-width:520px;
+  max-width:720px;
+  text-align:left;
+  padding:14px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
 }
 
-.leaders-panel-header h2{
-  margin:0;
-  font-size:24px;
+.leaders-title{
+  font-size:16px;
   font-weight:800;
-}
-
-.leaders-panel-header p{
-  margin:6px 0 0;
-  color:#cbd5e1;
-  font-size:13px;
+  color:#f8fafc;
+  margin-bottom:10px;
 }
 
 .leaders-grid{
-  margin-top:16px;
-  display:grid;
-  grid-template-columns:repeat(auto-fit, 3.86cm);
-  gap:18px;
-  justify-content:start;
+  display:flex;
+  flex-direction:row;
+  gap:10px;
+  overflow-x:auto;
+  padding-bottom:4px;
 }
 
 .leader-card{
-  position:relative;
+  flex:0 0 auto;
   width:3.86cm;
   height:3.62cm;
-  border-radius:18px;
+  border-radius:16px;
   padding:6px;
   background:linear-gradient(180deg, rgba(30,41,59,.95), rgba(15,23,42,.98));
   border:1px solid rgba(255,255,255,.08);
-  box-shadow:0 22px 40px rgba(0,0,0,.35);
-  transform-style:preserve-3d;
-  transition:transform .18s ease, box-shadow .18s ease;
+  box-shadow:0 14px 28px rgba(0,0,0,.35);
   overflow:hidden;
   display:flex;
   flex-direction:column;
 }
 
-.leader-card::before{
-  content:"";
-  position:absolute;
-  inset:0;
-  background:linear-gradient(135deg, rgba(255,255,255,.08), transparent 35%);
-  pointer-events:none;
-}
-
-.leader-card:hover{
-  transform:translateY(-4px) rotateX(4deg) rotateY(-4deg);
-  box-shadow:0 28px 50px rgba(0,0,0,.42);
-}
-
 .leader-photo-wrap{
   flex:1;
   min-height:0;
-  border-radius:14px;
+  border-radius:12px;
   overflow:hidden;
   background:linear-gradient(180deg,#1e293b,#0f172a);
   border:1px solid rgba(255,255,255,.08);
@@ -153,7 +134,6 @@ body{
   font-size:10px;
   line-height:1.1;
   font-weight:800;
-  letter-spacing:.2px;
   color:#f8fafc;
   white-space:nowrap;
   overflow:hidden;
@@ -172,6 +152,15 @@ body{
   background:rgba(59,130,246,.14);
   border:1px solid rgba(59,130,246,.22);
 }
+
+@media (max-width:700px){
+  .header-stamp.leaders-header{
+    min-width:auto;
+    max-width:none;
+    width:100%;
+  }
+}
+
 
 /* DASHBOARD */
 
