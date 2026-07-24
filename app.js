@@ -37,18 +37,18 @@ const fallbackConfig = {
   rows: 5,
   statusOptions: ['PICKING', 'ARMADO', 'PENDIENTE', 'REALIZADO'],
   clients: [
-    { id: 'PROMART', name: 'Cliente 1', logo: makeLogo('PROMART') },
-    { id: 'SODIMAC', name: 'Cliente 2', logo: makeLogo('SODIMAC') },
-    { id: 'TOTTUS', name: 'Cliente 3', logo: makeLogo('TOTTUS') },
-    { id: 'CENCOSUD', name: 'Cliente 3', logo: makeLogo('CENCOSUD') },
-    { id: 'SSPP', name: 'Cliente 3', logo: makeLogo('SSPP') },
-    { id: 'MAYORSA', name: 'Cliente 3', logo: makeLogo('MAYORSA') },
-    { id: 'CORP. VEGA', name: 'Cliente 3', logo: makeLogo('CORP. VEGA') }
+    { id: 'Cliente-1', name: 'PROMART', logo: makeLogo('PROMART') },
+    { id: 'Cliente-2', name: 'SODIMAC', logo: makeLogo('SODIMAC') },
+    { id: 'Cliente-3', name: 'TOTTUS', logo: makeLogo('TOTTUS') },
+    { id: 'Cliente-4', name: 'CENCOSUD', logo: makeLogo('CENCOSUD') },
+    { id: 'Cliente-5', name: 'SSPP', logo: makeLogo('SSPP') },
+    { id: 'Cliente-6', name: 'MAYORSA', logo: makeLogo('MAYORSA') },
+    { id: 'Cliente-7', name: 'CORP. VEGA', logo: makeLogo('CORP. VEGA') }
   ],
   leaders: [
-    { name: 'Responsable 1', photo: makePhoto('R1') },
-    { name: 'Responsable 2', photo: makePhoto('R2') },
-    { name: 'Responsable 3', photo: makePhoto('R3') }
+    { name: 'WILLIAM VALDIVIA', photo: makePhoto('R1') },
+    { name: 'MIGUEL BUSTAMANTE', photo: makePhoto('R2') },
+    { name: 'JOHAN LUYO', photo: makePhoto('R3') }
   ]
 };
 
