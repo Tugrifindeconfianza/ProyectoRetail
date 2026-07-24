@@ -35,15 +35,15 @@ const makePhoto = (text) => {
 const fallbackConfig = {
   columns: 7,
   rows: 5,
-  statusOptions: ['PENDIENTE', 'EN PROGRESO', 'DESPACHADO'],
+  statusOptions: ['PICKING', 'ARMADO', 'PENDIENTE', 'REALIZADO'],
   clients: [
-    { id: 'cliente-1', name: 'Cliente 1', logo: makeLogo('PROMART') },
-    { id: 'cliente-2', name: 'Cliente 2', logo: makeLogo('SODIMAC') },
-    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('TOTTUS') },
-    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('CENCOSUD') },
-    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('SSPP') },
-    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('MAYORSA') },
-    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('CORP. VEGA') }
+    { id: 'PROMART', name: 'Cliente 1', logo: makeLogo('PROMART') },
+    { id: 'SODIMAC', name: 'Cliente 2', logo: makeLogo('SODIMAC') },
+    { id: 'TOTTUS', name: 'Cliente 3', logo: makeLogo('TOTTUS') },
+    { id: 'CENCOSUD', name: 'Cliente 3', logo: makeLogo('CENCOSUD') },
+    { id: 'SSPP', name: 'Cliente 3', logo: makeLogo('SSPP') },
+    { id: 'MAYORSA', name: 'Cliente 3', logo: makeLogo('MAYORSA') },
+    { id: 'CORP. VEGA', name: 'Cliente 3', logo: makeLogo('CORP. VEGA') }
   ],
   leaders: [
     { name: 'Responsable 1', photo: makePhoto('R1') },
