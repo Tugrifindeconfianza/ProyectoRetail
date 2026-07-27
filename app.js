@@ -281,6 +281,9 @@ function renderMetrics() {
 }
 
 function renderMetrics() {
+  const container = document.getElementById('metrics');
+  if (!container) return;
+
   const cells = state.flat();
 
   const total = config.rows * config.columns;
@@ -293,28 +296,20 @@ function renderMetrics() {
   const realizado = cells.filter(cell => cell.clientId && cell.status === 'REALIZADO').length;
 
   const occupationPct = total ? Math.round((occupied / total) * 100) : 0;
-  const availablePct = total ? Math.round((available / total) * 100) : 0;
-  const realizadoPct = total ? Math.round((realizado / total) * 100) : 0;
-
   const maxStatus = Math.max(picking, armado, pendiente, realizado, 1);
 
-  const widthPicking = Math.round((picking / maxStatus) * 100);
-  const widthArmado = Math.round((armado / maxStatus) * 100);
-  const widthPendiente = Math.round((pendiente / maxStatus) * 100);
-  const widthRealizado = Math.round((realizado / maxStatus) * 100);
-
-  document.getElementById('metrics').innerHTML = `
-    <section class="executive-summary">
+  container.innerHTML = `
+    <section class="executive-summary compact">
 
       <div class="summary-header">
         <div>
           <div class="summary-eyebrow">RESUMEN EJECUTIVO</div>
-          <h2>Estado general del layout</h2>
-          <p>Vista consolidada de capacidad, ocupación y avance operativo retail.</p>
+          <h2>Estado del layout</h2>
+          <p>Capacidad, ocupación y avance retail.</p>
         </div>
 
         <div class="summary-capacity">
-          <span>CAPACIDAD TOTAL</span>
+          <span>TOTAL</span>
           <strong>${total}</strong>
         </div>
       </div>
@@ -325,7 +320,7 @@ function renderMetrics() {
           <div class="donut-chart" style="--p:${occupationPct}%">
             <div class="donut-center">
               <strong>${occupationPct}%</strong>
-              <span>Ocupación</span>
+              <span>Ocupado</span>
             </div>
           </div>
 
@@ -335,41 +330,13 @@ function renderMetrics() {
           </div>
         </div>
 
-        <div class="kpi-grid">
-
-          <div class="kpi-card total">
-            <span>Total posiciones</span>
-            <strong>${total}</strong>
-            <small>Capacidad total del layout</small>
-          </div>
-
-          <div class="kpi-card occupied">
-            <span>Ocupadas</span>
-            <strong>${occupied}</strong>
-            <small>${occupationPct}% de ocupación</small>
-          </div>
-
-          <div class="kpi-card available">
-            <span>Disponibles</span>
-            <strong>${available}</strong>
-            <small>${availablePct}% libre</small>
-          </div>
-
-          <div class="kpi-card done">
-            <span>Realizadas</span>
-            <strong>${realizado}</strong>
-            <small>${realizadoPct}% del total</small>
-          </div>
-
-        </div>
-
         <div class="status-panel">
           <div class="status-title">Distribución por estado</div>
 
           <div class="status-row">
             <div class="status-label picking">PICKING</div>
             <div class="status-bar">
-              <div class="status-fill picking" style="width:${widthPicking}%"></div>
+              <div class="status-fill picking" style="width:${Math.round((picking / maxStatus) * 100)}%"></div>
             </div>
             <strong>${picking}</strong>
           </div>
@@ -377,7 +344,7 @@ function renderMetrics() {
           <div class="status-row">
             <div class="status-label armado">ARMADO</div>
             <div class="status-bar">
-              <div class="status-fill armado" style="width:${widthArmado}%"></div>
+              <div class="status-fill armado" style="width:${Math.round((armado / maxStatus) * 100)}%"></div>
             </div>
             <strong>${armado}</strong>
           </div>
@@ -385,7 +352,7 @@ function renderMetrics() {
           <div class="status-row">
             <div class="status-label pendiente">PENDIENTE</div>
             <div class="status-bar">
-              <div class="status-fill pendiente" style="width:${widthPendiente}%"></div>
+              <div class="status-fill pendiente" style="width:${Math.round((pendiente / maxStatus) * 100)}%"></div>
             </div>
             <strong>${pendiente}</strong>
           </div>
@@ -393,7 +360,7 @@ function renderMetrics() {
           <div class="status-row">
             <div class="status-label realizado">REALIZADO</div>
             <div class="status-bar">
-              <div class="status-fill realizado" style="width:${widthRealizado}%"></div>
+              <div class="status-fill realizado" style="width:${Math.round((realizado / maxStatus) * 100)}%"></div>
             </div>
             <strong>${realizado}</strong>
           </div>
