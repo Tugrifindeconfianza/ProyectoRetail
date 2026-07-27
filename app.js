@@ -34,7 +34,7 @@ const makePhoto = (text) => {
 
 const fallbackConfig = {
   columns: 7,
-  rows: 5,
+  rows: 12,
   statusOptions: ['PICKING', 'ARMADO', 'PENDIENTE', 'REALIZADO'],
   clients: [
     { id: 'Cliente-1', name: 'PROMART', logo: makeLogo('PROMART') },
