@@ -240,9 +240,10 @@ function assignClient() {
 }
 
 function statusClass(status) {
-  if (status === 'PENDIENTE') return 'pending';
-  if (status === 'EN PROGRESO') return 'progress';
-  if (status === 'DESPACHADO') return 'shipped';
+  if (status === 'PICKING') return 'picking';
+  if (status === 'ARMADO') return 'armado';
+  if (status === 'PENDIENTE') return 'pendiente';
+  if (status === 'REALIZADO') return 'realizado';
   return 'empty';
 }
 
