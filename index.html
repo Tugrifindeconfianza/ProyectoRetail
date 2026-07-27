@@ -10,35 +10,46 @@
 </head>
 
 <body>
-<div class="page-header">
-  <div class="title-block">
-    <h1>Layout Outbound Retail</h1>
-    <p>Reporte de despachos Outbound Retail.</p>
-  </div>
-  
-  <div class="metrics" id="metrics"></div>
- 
-  <div class="header-side">
-    <div class="header-stamp leaders-header">
-  <div class="leaders-title">Equipo Encargado Retail</div>
-  <select id="modalLeaderSelect"></select>
-  <div id="leaders" class="leaders-grid"></div>
-</div>
 
-    <div class="leaders-panel">
-      <div class="leaders-panel-header">
-        <div>
-          <p>Personal encargado de picking, armado o despacho.</p>
-        </div>
+  <div class="page-header">
+    
+    <div class="title-block">
+      <h1>Layout Outbound Retail</h1>
+      <p>Reporte de despachos Outbound Retail.</p>
+    </div>
+
+    <div class="metrics" id="metrics"></div>
+
+    <div class="header-side">
+
+      <!-- Encargado principal -->
+      <div class="header-stamp leaders-header">
+        <div class="leaders-title">Equipo Encargado Retail</div>
+        <select id="modalLeaderSelect"></select>
+
+        <!-- ID corregido -->
+        <div id="leadersHeader" class="leaders-grid"></div>
       </div>
-      <div id="leaders" class="leaders-grid"></div>
+
+      <!-- Panel adicional -->
+      <div class="leaders-panel">
+        <div class="leaders-panel-header">
+          <div>
+            <p>Personal encargado de picking, armado o despacho.</p>
+          </div>
+        </div>
+
+        <!-- ID corregido -->
+        <div id="leadersPanel" class="leaders-grid"></div>
+      </div>
+
     </div>
   </div>
-</div>
-
 
   <div class="dashboard-shell">
+
     <div class="controls-grid">
+
       <div class="field">
         <label>CLIENTE</label>
         <select id="clientSelect"></select>
@@ -64,37 +75,65 @@
 
       <div class="field">
         <label>ACCIÓN</label>
-        <button class="btn-primary" onclick="assignClient()">Asignar</button>
+        <button class="btn-primary" onclick="assignClient()">
+          Asignar
+        </button>
       </div>
+
     </div>
 
     <div class="actions">
-      <button class="btn-secondary" onclick="saveLayout()">Guardar</button>
-      <button class="btn-secondary" onclick="resetLayout()">Limpiar todo</button>
+      <button class="btn-secondary" onclick="saveLayout()">
+        Guardar
+      </button>
+
+      <button class="btn-secondary" onclick="resetLayout()">
+        Limpiar todo
+      </button>
     </div>
 
     <div class="status-line" id="status"></div>
 
     <div class="legend">
-      <div class="legend-item"><span class="dot" style="background:#f59e0b"></span>PICKING</div>
-      <div class="legend-item"><span class="dot" style="background:#3b82f6"></span>ARMADO</div>
-      <div class="legend-item"><span class="dot" style="background:#10b981"></span>PENDIENTE</div>
-      <div class="legend-item"><span class="dot" style="background:#64748b"></span>REALIZADO</div>
+      <div class="legend-item">
+        <span class="dot" style="background:#f59e0b"></span>
+        PICKING
+      </div>
+
+      <div class="legend-item">
+        <span class="dot" style="background:#3b82f6"></span>
+        ARMADO
+      </div>
+
+      <div class="legend-item">
+        <span class="dot" style="background:#10b981"></span>
+        PENDIENTE
+      </div>
+
+      <div class="legend-item">
+        <span class="dot" style="background:#64748b"></span>
+        REALIZADO
+      </div>
     </div>
 
     <div class="scene">
       <div id="layout" class="layout"></div>
     </div>
+
   </div>
 
+  <!-- Modal -->
   <div class="modal-backdrop" id="modalBackdrop" onclick="backdropClose(event)">
+
     <div class="modal">
+
       <div class="modal-header">
         <h3>Editar posición</h3>
         <p id="modalPosition"></p>
       </div>
 
       <div class="modal-body">
+
         <div class="field">
           <label>CLIENTE</label>
           <select id="modalClientSelect"></select>
@@ -104,14 +143,30 @@
           <label>ESTADO</label>
           <select id="modalStatusSelect"></select>
         </div>
+
       </div>
 
       <div class="modal-actions">
-        <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
-        <button class="btn-secondary danger-btn" onclick="removeCellFromModal()">Eliminar</button>
-        <button class="btn-primary" onclick="saveCellFromModal()">Guardar cambios</button>
+
+        <button class="btn-secondary" onclick="closeModal()">
+          Cancelar
+        </button>
+
+        <button class="btn-secondary danger-btn"
+                onclick="removeCellFromModal()">
+          Eliminar
+        </button>
+
+        <button class="btn-primary"
+                onclick="saveCellFromModal()">
+          Guardar cambios
+        </button>
+
       </div>
+
     </div>
+
   </div>
+
 </body>
 </html>
