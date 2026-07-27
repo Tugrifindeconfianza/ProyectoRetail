@@ -455,4 +455,8 @@ function renderLeaders() {
   `).join('');
 }
 
+function getLeaderById(id) {
+  return config.leaders.find(l => l.id === id);
+}
+
 loadApp();
