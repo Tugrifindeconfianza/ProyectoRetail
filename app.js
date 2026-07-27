@@ -282,6 +282,7 @@ function renderMetrics() {
 
 function render() {
   renderMetrics();
+  renderExecutiveChart();
 
   const container = document.getElementById('layout');
   container.innerHTML = '';
@@ -494,6 +495,52 @@ function renderLeaders() {
 
 function getLeaderById(id) {
   return config.leaders.find(l => l.id === id);
+}
+
+function renderExecutiveChart() {
+  const container = document.getElementById('executiveChart');
+
+  if (!container || !config.leaders) return;
+
+  container.innerHTML = `
+    <div class="org-chart">
+
+      <div class="org-node ceo-node">
+        <div class="org-role">CEO</div>
+        <div class="org-name">Dirección General</div>
+        <div class="org-desc">Estrategia y visión del negocio</div>
+      </div>
+
+      <div class="org-line"></div>
+
+      <div class="org-node manager-node">
+        <div class="org-role">GERENCIA</div>
+        <div class="org-name">Gerencia Retail</div>
+        <div class="org-desc">Gestión operativa Outbound</div>
+      </div>
+
+      <div class="org-line"></div>
+
+      <div class="org-node area-node">
+        <div class="org-role">ÁREA</div>
+        <div class="org-name">Outbound Retail</div>
+        <div class="org-desc">Picking · Armado · Despacho</div>
+      </div>
+
+      <div class="team-mini-row">
+        ${config.leaders.map((person, i) => `
+          <div class="team-mini-card">
+            <img src="${person.photo}" alt="${person.name}">
+            <div>
+              <strong>${person.name}</strong>
+              <span>Responsable ${String(i + 1).padStart(2, '0')}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+
+    </div>
+  `;
 }
 
 loadApp();
