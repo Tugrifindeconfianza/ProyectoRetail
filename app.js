@@ -273,8 +273,8 @@ function renderMetrics() {
     </div>
 
     <div class="metric-card">
-      <div class="metric-label">DESPACHADAS</div>
-      <div class="metric-value">${shipped}</div>
+      <div class="metric-label">REALIZADAS</div>
+      <div class="metric-value">${realizado}</div>
       <div class="metric-sub">Posiciones cerradas o listas</div>
     </div>
   `;
