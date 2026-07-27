@@ -138,8 +138,9 @@ function loadApp() {
 }
 
 function fillSelectors() {
-  document.getElementById('clientSelect').innerHTML =
-    config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('modalLeaderSelect').innerHTML =
+  `<option value="">Sin responsable</option>` +
+  config.leaders.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
 
   document.getElementById('columnSelect').innerHTML =
     Array.from({ length: config.columns }, (_, i) => {
@@ -299,8 +300,10 @@ function render() {
           <div class="logo-wrap">
             <img class="logo" src="${client.logo}" alt="${client.name}">
           </div>
+          <div class="retail-owner">
+  ${getLeaderById(cellData.leaderId)?.name || 'Sin responsable'}
+</div>
 
-          <div class="client-name">${client.name}</div>
         `;
       } else {
         cell.innerHTML = `
@@ -334,6 +337,8 @@ function openModal(c, r) {
 
   document.getElementById('modalClientSelect').value = cell.clientId || '';
   document.getElementById('modalStatusSelect').value = cell.status || 'PENDIENTE';
+  document.getElementById('modalLeaderSelect').value = cell.leaderId || '';
+
   document.getElementById('modalBackdrop').classList.add('show');
 }
 
@@ -353,12 +358,14 @@ function saveCellFromModal() {
 
   const clientId = document.getElementById('modalClientSelect').value;
   const status = document.getElementById('modalStatusSelect').value;
+  const leaderId = document.getElementById('modalLeaderSelect').value;
+
   const { c, r } = selectedCell;
 
   if (!clientId) {
-    state[c][r] = { clientId: '', status: 'PENDIENTE' };
+    state[c][r] = { clientId: '', status: 'PENDIENTE', leaderId: '' };
   } else {
-    state[c][r] = { clientId, status };
+    state[c][r] = { clientId, status, leaderId };
   }
 
   closeModal();
