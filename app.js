@@ -62,9 +62,15 @@ function normalizeConfig(cfg = {}) {
   return {
     columns: cfg.columns || fallbackConfig.columns,
     rows: cfg.rows || fallbackConfig.rows,
-    statusOptions: Array.isArray(cfg.statusOptions) ? cfg.statusOptions : fallbackConfig.statusOptions,
-    clients: Array.isArray(cfg.clients) ? cfg.clients : fallbackConfig.clients,
-    leaders: Array.isArray(cfg.leaders) ? cfg.leaders : fallbackConfig.leaders
+    statusOptions: Array.isArray(cfg.statusOptions) && cfg.statusOptions.length
+      ? cfg.statusOptions
+      : fallbackConfig.statusOptions,
+    clients: Array.isArray(cfg.clients) && cfg.clients.length
+      ? cfg.clients
+      : fallbackConfig.clients,
+    leaders: Array.isArray(cfg.leaders) && cfg.leaders.length
+      ? cfg.leaders
+      : fallbackConfig.leaders
   };
 }
 
