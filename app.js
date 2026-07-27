@@ -280,83 +280,129 @@ function renderMetrics() {
   `;
 }
 
-function render() {
-  renderMetrics();
-  renderExecutiveChart();
+function renderMetrics() {
+  const cells = state.flat();
 
-  const container = document.getElementById('layout');
-  container.innerHTML = '';
+  const total = config.rows * config.columns;
+  const occupied = cells.filter(cell => cell.clientId).length;
+  const available = total - occupied;
 
-  for (let c = 0; c < config.columns; c++) {
-    const used = state[c].filter(cell => cell.clientId).length;
-    const progress = Math.round((used / config.rows) * 100);
+  const picking = cells.filter(cell => cell.clientId && cell.status === 'PICKING').length;
+  const armado = cells.filter(cell => cell.clientId && cell.status === 'ARMADO').length;
+  const pendiente = cells.filter(cell => cell.clientId && cell.status === 'PENDIENTE').length;
+  const realizado = cells.filter(cell => cell.clientId && cell.status === 'REALIZADO').length;
 
-    const col = document.createElement('div');
-    col.className = 'column';
+  const occupationPct = total ? Math.round((occupied / total) * 100) : 0;
+  const availablePct = total ? Math.round((available / total) * 100) : 0;
+  const realizadoPct = total ? Math.round((realizado / total) * 100) : 0;
 
-    const header = document.createElement('div');
-    header.className = 'column-header';
-    header.innerHTML = `
-      <div class="column-top">
-        <div class="column-number">${String(c + 1).padStart(2, '0')}</div>
-        <div class="column-count">${used}/${config.rows}</div>
+  const maxStatus = Math.max(picking, armado, pendiente, realizado, 1);
+
+  const widthPicking = Math.round((picking / maxStatus) * 100);
+  const widthArmado = Math.round((armado / maxStatus) * 100);
+  const widthPendiente = Math.round((pendiente / maxStatus) * 100);
+  const widthRealizado = Math.round((realizado / maxStatus) * 100);
+
+  document.getElementById('metrics').innerHTML = `
+    <section class="executive-summary">
+
+      <div class="summary-header">
+        <div>
+          <div class="summary-eyebrow">RESUMEN EJECUTIVO</div>
+          <h2>Estado general del layout</h2>
+          <p>Vista consolidada de capacidad, ocupación y avance operativo retail.</p>
+        </div>
+
+        <div class="summary-capacity">
+          <span>CAPACIDAD TOTAL</span>
+          <strong>${total}</strong>
+        </div>
       </div>
 
-      <div class="progress-track">
-        <div class="progress-fill" style="width:${progress}%"></div>
+      <div class="summary-body">
+
+        <div class="donut-card">
+          <div class="donut-chart" style="--p:${occupationPct}%">
+            <div class="donut-center">
+              <strong>${occupationPct}%</strong>
+              <span>Ocupación</span>
+            </div>
+          </div>
+
+          <div class="donut-legend">
+            <div><span class="legend-dot blue"></span>Ocupadas: <strong>${occupied}</strong></div>
+            <div><span class="legend-dot slate"></span>Disponibles: <strong>${available}</strong></div>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+
+          <div class="kpi-card total">
+            <span>Total posiciones</span>
+            <strong>${total}</strong>
+            <small>Capacidad total del layout</small>
+          </div>
+
+          <div class="kpi-card occupied">
+            <span>Ocupadas</span>
+            <strong>${occupied}</strong>
+            <small>${occupationPct}% de ocupación</small>
+          </div>
+
+          <div class="kpi-card available">
+            <span>Disponibles</span>
+            <strong>${available}</strong>
+            <small>${availablePct}% libre</small>
+          </div>
+
+          <div class="kpi-card done">
+            <span>Realizadas</span>
+            <strong>${realizado}</strong>
+            <small>${realizadoPct}% del total</small>
+          </div>
+
+        </div>
+
+        <div class="status-panel">
+          <div class="status-title">Distribución por estado</div>
+
+          <div class="status-row">
+            <div class="status-label picking">PICKING</div>
+            <div class="status-bar">
+              <div class="status-fill picking" style="width:${widthPicking}%"></div>
+            </div>
+            <strong>${picking}</strong>
+          </div>
+
+          <div class="status-row">
+            <div class="status-label armado">ARMADO</div>
+            <div class="status-bar">
+              <div class="status-fill armado" style="width:${widthArmado}%"></div>
+            </div>
+            <strong>${armado}</strong>
+          </div>
+
+          <div class="status-row">
+            <div class="status-label pendiente">PENDIENTE</div>
+            <div class="status-bar">
+              <div class="status-fill pendiente" style="width:${widthPendiente}%"></div>
+            </div>
+            <strong>${pendiente}</strong>
+          </div>
+
+          <div class="status-row">
+            <div class="status-label realizado">REALIZADO</div>
+            <div class="status-bar">
+              <div class="status-fill realizado" style="width:${widthRealizado}%"></div>
+            </div>
+            <strong>${realizado}</strong>
+          </div>
+        </div>
+
       </div>
-    `;
 
-    col.appendChild(header);
-
-    for (let r = 0; r < config.rows; r++) {
-      const cellData = state[c][r];
-      const cell = document.createElement('div');
-      const cellStatusClass = cellData.clientId ? statusClass(cellData.status) : 'empty';
-
-      cell.className = `cell ${cellData.clientId ? '' : 'empty'} ${cellStatusClass}`;
-
-      if (cellData.clientId) {
-        const client = getClientById(cellData.clientId) || {
-          name: 'Cliente no encontrado',
-          logo: makeLogo('N/A')
-        };
-
-        cell.innerHTML = `
-          <div class="badge-row">
-            <span class="badge ${statusClass(cellData.status)}">${cellData.status}</span>
-            <span class="slot-id">${String(r + 1).padStart(2, '0')}</span>
-          </div>
-
-          <div class="logo-wrap">
-            <img class="logo" src="${client.logo}" alt="${client.name}">
-          </div>
-          <div class="retail-owner">
-  ${getLeaderById(cellData.leaderId)?.name || 'Sin responsable'}
-</div>
-
-        `;
-      } else {
-        cell.innerHTML = `
-          <div class="badge-row">
-            <span class="badge empty">DISPONIBLE</span>
-            <span class="slot-id">${String(r + 1).padStart(2, '0')}</span>
-          </div>
-
-          <div class="logo-wrap">
-            <div class="empty-text">Sin asignación</div>
-          </div>
-
-          <div class="client-name" style="color:#64748b">-</div>
-        `;
-      }
-
-      cell.onclick = () => openModal(c, r);
-      col.appendChild(cell);
-    }
-
-    container.appendChild(col);
-  }
+    </section>
+  `;
 }
 
 function openModal(c, r) {
