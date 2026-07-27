@@ -2,13 +2,31 @@ let config = {};
 let state = [];
 let selectedCell = null;
 
+function escapeHtml(value = '') {
+  return String(value)
+    .replaceAll('&', '&')
+    .replaceAll('<', '<')
+    .replaceAll('>', '>')
+    .replaceAll('"', '"')
+    .replaceAll("'", '&#039;');
+}
+
+function setTextById(id, text) {
+  const element = document.getElementById(id);
+  if (element) {
+    element.textContent = text;
+  }
+}
+
 const makeLogo = (text) => {
+  const safeText = escapeHtml(text);
+
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="260" height="90">
       <rect width="100%" height="100%" rx="18" fill="#e5e7eb"/>
       <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle"
         font-family="Arial" font-size="24" font-weight="800" fill="#111827">
-        ${text}
+        ${safeText}
       </text>
     </svg>
   `;
@@ -17,6 +35,8 @@ const makeLogo = (text) => {
 };
 
 const makePhoto = (text) => {
+  const safeText = escapeHtml(text);
+
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="400" height="500">
       <rect width="100%" height="100%" fill="#1e293b"/>
@@ -24,7 +44,7 @@ const makePhoto = (text) => {
       <rect x="95" y="285" width="210" height="130" rx="65" fill="#334155"/>
       <text x="50%" y="88%" dominant-baseline="middle" text-anchor="middle"
         font-family="Arial" font-size="28" font-weight="800" fill="#f8fafc">
-        ${text}
+        ${safeText}
       </text>
     </svg>
   `;
@@ -46,10 +66,10 @@ const fallbackConfig = {
     { id: 'Cliente-7', name: 'CORP. VEGA', logo: makeLogo('CORP. VEGA') }
   ],
   leaders: [
-  { id: 'R1', name: 'WILLIAM VALDIVIA', photo: makePhoto('R1') },
-  { id: 'R2', name: 'MIGUEL BUSTAMANTE', photo: makePhoto('R2') },
-  { id: 'R3', name: 'JOHAN LUYO', photo: makePhoto('R3') }
-]
+    { id: 'R1', name: 'WILLIAM VALDIVIA', photo: makePhoto('R1') },
+    { id: 'R2', name: 'MIGUEL BUSTAMANTE', photo: makePhoto('R2') },
+    { id: 'R3', name: 'JOHAN LUYO', photo: makePhoto('R3') }
+  ]
 };
 
 function hasAppsScript() {
@@ -98,9 +118,9 @@ function normalizeState(saved) {
       const cell = col[r] || {};
 
       return {
-  clientId: cell.clientId || '',
-  status: config.statusOptions.includes(cell.status) ? cell.status : 'PENDIENTE',
-  leaderId: cell.leaderId || ''
+        clientId: cell.clientId || '',
+        status: config.statusOptions.includes(cell.status) ? cell.status : 'PENDIENTE',
+        leaderId: cell.leaderId || ''
       };
     });
   });
@@ -140,7 +160,7 @@ function loadApp() {
   render();
   init3DEffects();
 
-  document.getElementById('lastSaved').textContent = 'Modo GitHub/local: datos guardados en el navegador';
+  setTextById('lastSaved', 'Modo GitHub/local: datos guardados en el navegador');
 }
 
 function fillSelectors() {
@@ -154,7 +174,9 @@ function fillSelectors() {
   if (clientSelect) {
     clientSelect.innerHTML =
       `<option value="">Selecciona cliente</option>` +
-      config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      config.clients
+        .map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`)
+        .join('');
   }
 
   if (columnSelect) {
@@ -167,24 +189,32 @@ function fillSelectors() {
 
   if (statusSelect) {
     statusSelect.innerHTML =
-      config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
+      config.statusOptions
+        .map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`)
+        .join('');
   }
 
   if (modalClientSelect) {
     modalClientSelect.innerHTML =
       `<option value="">Sin asignar</option>` +
-      config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+      config.clients
+        .map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`)
+        .join('');
   }
 
   if (modalStatusSelect) {
     modalStatusSelect.innerHTML =
-      config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
+      config.statusOptions
+        .map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`)
+        .join('');
   }
 
   if (modalLeaderSelect) {
     modalLeaderSelect.innerHTML =
       `<option value="">Sin responsable</option>` +
-      config.leaders.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+      config.leaders
+        .map(l => `<option value="${escapeHtml(l.id)}">${escapeHtml(l.name)}</option>`)
+        .join('');
   }
 }
 
@@ -192,18 +222,37 @@ function getClientById(id) {
   return config.clients.find(c => c.id === id);
 }
 
+function getLeaderById(id) {
+  return config.leaders.find(l => l.id === id);
+}
+
 function isColumnOccupied(colIndex) {
-  return state[colIndex].some(cell => cell.clientId);
+  return Array.isArray(state[colIndex]) && state[colIndex].some(cell => cell.clientId);
 }
 
 function assignClient() {
-  const clientId = document.getElementById('clientSelect').value;
-  const status = document.getElementById('statusSelect').value;
-  const colIndex = Number(document.getElementById('columnSelect').value);
-  const fullColumn = document.getElementById('fullColumnMode').checked;
+  const clientSelect = document.getElementById('clientSelect');
+  const statusSelect = document.getElementById('statusSelect');
+  const columnSelect = document.getElementById('columnSelect');
+  const fullColumnMode = document.getElementById('fullColumnMode');
+
+  if (!clientSelect || !statusSelect || !columnSelect) {
+    setStatus('Faltan controles HTML para asignar cliente.');
+    return;
+  }
+
+  const clientId = clientSelect.value;
+  const status = statusSelect.value || 'PENDIENTE';
+  const colIndex = Number(columnSelect.value);
+  const fullColumn = fullColumnMode ? fullColumnMode.checked : false;
 
   if (!clientId) {
     setStatus('Selecciona un cliente.');
+    return;
+  }
+
+  if (!Number.isInteger(colIndex) || colIndex < 0 || colIndex >= config.columns) {
+    setStatus('Selecciona una columna válida.');
     return;
   }
 
@@ -214,7 +263,7 @@ function assignClient() {
     }
 
     for (let r = 0; r < config.rows; r++) {
-      state[colIndex][r] = { clientId, status };
+      state[colIndex][r] = { clientId, status, leaderId: '' };
     }
 
     render();
@@ -230,7 +279,8 @@ function assignClient() {
     return;
   }
 
-  state[colIndex][rowIndex] = { clientId, status };
+  state[colIndex][rowIndex] = { clientId, status, leaderId: '' };
+
   render();
   init3DEffects();
 
@@ -248,39 +298,6 @@ function statusClass(status) {
 }
 
 function renderMetrics() {
-  const total = config.rows * config.columns;
-  const occupied = state.flat().filter(c => c.clientId).length;
-  const available = total - occupied;
-  const realizado = state.flat().filter(c => c.clientId && c.status === 'REALIZADO').length;
-
-  document.getElementById('metrics').innerHTML = `
-    <div class="metric-card">
-      <div class="metric-label">TOTAL POSICIONES</div>
-      <div class="metric-value">${total}</div>
-      <div class="metric-sub">Capacidad total del layout</div>
-    </div>
-
-    <div class="metric-card">
-      <div class="metric-label">OCUPADAS</div>
-      <div class="metric-value">${occupied}</div>
-      <div class="metric-sub">${Math.round((occupied / total) * 100)}% de ocupación</div>
-    </div>
-
-    <div class="metric-card">
-      <div class="metric-label">DISPONIBLES</div>
-      <div class="metric-value">${available}</div>
-      <div class="metric-sub">Espacios libres para asignación</div>
-    </div>
-
-    <div class="metric-card">
-      <div class="metric-label">REALIZADAS</div>
-      <div class="metric-value">${realizado}</div>
-      <div class="metric-sub">Posiciones cerradas o listas</div>
-    </div>
-  `;
-}
-
-function renderMetrics() {
   const container = document.getElementById('metrics');
   if (!container) return;
 
@@ -291,269 +308,4 @@ function renderMetrics() {
   const available = total - occupied;
 
   const picking = cells.filter(cell => cell.clientId && cell.status === 'PICKING').length;
-  const armado = cells.filter(cell => cell.clientId && cell.status === 'ARMADO').length;
-  const pendiente = cells.filter(cell => cell.clientId && cell.status === 'PENDIENTE').length;
-  const realizado = cells.filter(cell => cell.clientId && cell.status === 'REALIZADO').length;
-
-  const occupationPct = total ? Math.round((occupied / total) * 100) : 0;
-  const maxStatus = Math.max(picking, armado, pendiente, realizado, 1);
-
-  container.innerHTML = `
-    <section class="executive-summary compact">
-
-      <div class="summary-header">
-        <div>
-          <div class="summary-eyebrow">RESUMEN EJECUTIVO</div>
-          <h2>Estado del layout</h2>
-          <p>Capacidad, ocupación y avance retail.</p>
-        </div>
-
-        <div class="summary-capacity">
-          <span>TOTAL</span>
-          <strong>${total}</strong>
-        </div>
-      </div>
-
-      <div class="summary-body">
-
-        <div class="donut-card">
-          <div class="donut-chart" style="--p:${occupationPct}%">
-            <div class="donut-center">
-              <strong>${occupationPct}%</strong>
-              <span>Ocupado</span>
-            </div>
-          </div>
-
-          <div class="donut-legend">
-            <div><span class="legend-dot blue"></span>Ocupadas: <strong>${occupied}</strong></div>
-            <div><span class="legend-dot slate"></span>Disponibles: <strong>${available}</strong></div>
-          </div>
-        </div>
-
-        <div class="status-panel">
-          <div class="status-title">Distribución por estado</div>
-
-          <div class="status-row">
-            <div class="status-label picking">PICKING</div>
-            <div class="status-bar">
-              <div class="status-fill picking" style="width:${Math.round((picking / maxStatus) * 100)}%"></div>
-            </div>
-            <strong>${picking}</strong>
-          </div>
-
-          <div class="status-row">
-            <div class="status-label armado">ARMADO</div>
-            <div class="status-bar">
-              <div class="status-fill armado" style="width:${Math.round((armado / maxStatus) * 100)}%"></div>
-            </div>
-            <strong>${armado}</strong>
-          </div>
-
-          <div class="status-row">
-            <div class="status-label pendiente">PENDIENTE</div>
-            <div class="status-bar">
-              <div class="status-fill pendiente" style="width:${Math.round((pendiente / maxStatus) * 100)}%"></div>
-            </div>
-            <strong>${pendiente}</strong>
-          </div>
-
-          <div class="status-row">
-            <div class="status-label realizado">REALIZADO</div>
-            <div class="status-bar">
-              <div class="status-fill realizado" style="width:${Math.round((realizado / maxStatus) * 100)}%"></div>
-            </div>
-            <strong>${realizado}</strong>
-          </div>
-        </div>
-
-      </div>
-
-    </section>
-  `;
-}
-
-function openModal(c, r) {
-  selectedCell = { c, r };
-  const cell = state[c][r];
-
-  document.getElementById('modalPosition').textContent =
-    `Columna ${String(c + 1).padStart(2, '0')} · Posición ${String(r + 1).padStart(2, '0')}`;
-
-  document.getElementById('modalClientSelect').value = cell.clientId || '';
-  document.getElementById('modalStatusSelect').value = cell.status || 'PENDIENTE';
-  document.getElementById('modalLeaderSelect').value = cell.leaderId || '';
-
-  document.getElementById('modalBackdrop').classList.add('show');
-}
-
-function closeModal() {
-  selectedCell = null;
-  document.getElementById('modalBackdrop').classList.remove('show');
-}
-
-function backdropClose(event) {
-  if (event.target.id === 'modalBackdrop') {
-    closeModal();
-  }
-}
-
-function saveCellFromModal() {
-  if (!selectedCell) return;
-
-  const clientId = document.getElementById('modalClientSelect').value;
-  const status = document.getElementById('modalStatusSelect').value;
-  const leaderId = document.getElementById('modalLeaderSelect').value;
-
-  const { c, r } = selectedCell;
-
-  if (!clientId) {
-    state[c][r] = { clientId: '', status: 'PENDIENTE', leaderId: '' };
-  } else {
-    state[c][r] = { clientId, status, leaderId };
-  }
-
-  closeModal();
-  render();
-  init3DEffects();
-  setStatus('Posición actualizada correctamente.');
-}
-
-function removeCellFromModal() {
-  if (!selectedCell) return;
-
-  const { c, r } = selectedCell;
-
-  state[c][r] = { clientId: '', status: 'PENDIENTE' };
-
-  closeModal();
-  render();
-  init3DEffects();
-  setStatus('Posición liberada.');
-}
-
-function init3DEffects() {
-  document.querySelectorAll('.column').forEach(col => {
-    col.onmousemove = e => {
-      const rect = col.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const rotateX = 10 + ((rect.height / 2 - y) / rect.height) * 10;
-      const rotateY = -6 + ((x - rect.width / 2) / rect.width) * 12;
-
-      col.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
-    };
-
-    col.onmouseleave = () => {
-      col.style.transform = 'rotateX(10deg) rotateY(-6deg)';
-    };
-  });
-}
-
-function saveLayout() {
-  if (hasAppsScript()) {
-    google.script.run.withSuccessHandler(() => {
-      const now = new Date().toLocaleString('es-PE');
-      document.getElementById('lastSaved').textContent = `Último guardado: ${now}`;
-      setStatus('Layout guardado correctamente.');
-    }).saveLayoutData(state);
-
-    return;
-  }
-
-  localStorage.setItem('layoutData', JSON.stringify(state));
-
-  const now = new Date().toLocaleString('es-PE');
-  setStatus(`Último guardado: ${now}`);
-  }
-
-function resetLayout() {
-  const ok = confirm('¿Deseas limpiar todo el layout?');
-
-  if (!ok) return;
-
-  state = buildEmptyState();
-
-  render();
-  init3DEffects();
-  setStatus('Layout reiniciado.');
-}
-
-function setStatus(text) {
-  document.getElementById('status').textContent = text;
-
-  setTimeout(() => {
-    document.getElementById('status').textContent = '';
-  }, 3200);
-}
-
-function renderLeaders() {
-  const container = document.getElementById('leaders');
-
-  if (!container || !config.leaders) return;
-
-  container.innerHTML = config.leaders.map((person, i) => `
-    <div class="leader-card">
-      <div class="leader-photo-wrap">
-        <img class="leader-photo" src="${person.photo}" alt="${person.name}">
-      </div>
-
-      <div class="leader-info">
-        <div class="leader-name">${person.name}</div>
-        <div class="leader-tag">RESPONSABLE ${String(i + 1).padStart(2, '0')}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function getLeaderById(id) {
-  return config.leaders.find(l => l.id === id);
-}
-
-function renderExecutiveChart() {
-  const container = document.getElementById('executiveChart');
-
-  if (!container || !config.leaders) return;
-
-  container.innerHTML = `
-    <div class="org-chart">
-
-      <div class="org-node ceo-node">
-        <div class="org-role">CEO</div>
-        <div class="org-name">Dirección General</div>
-        <div class="org-desc">Estrategia y visión del negocio</div>
-      </div>
-
-      <div class="org-line"></div>
-
-      <div class="org-node manager-node">
-        <div class="org-role">GERENCIA</div>
-        <div class="org-name">Gerencia Retail</div>
-        <div class="org-desc">Gestión operativa Outbound</div>
-      </div>
-
-      <div class="org-line"></div>
-
-      <div class="org-node area-node">
-        <div class="org-role">ÁREA</div>
-        <div class="org-name">Outbound Retail</div>
-        <div class="org-desc">Picking · Armado · Despacho</div>
-      </div>
-
-      <div class="team-mini-row">
-        ${config.leaders.map((person, i) => `
-          <div class="team-mini-card">
-            <img src="${person.photo}" alt="${person.name}">
-            <div>
-              <strong>${person.name}</strong>
-              <span>Responsable ${String(i + 1).padStart(2, '0')}</span>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-
-    </div>
-  `;
-}
-
-loadApp();
+  const armado = cells.filter
