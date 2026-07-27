@@ -46,10 +46,10 @@ const fallbackConfig = {
     { id: 'Cliente-7', name: 'CORP. VEGA', logo: makeLogo('CORP. VEGA') }
   ],
   leaders: [
-    { name: 'WILLIAM VALDIVIA', photo: makePhoto('R1') },
-    { name: 'MIGUEL BUSTAMANTE', photo: makePhoto('R2') },
-    { name: 'JOHAN LUYO', photo: makePhoto('R3') }
-  ]
+  { id: 'R1', name: 'WILLIAM VALDIVIA', photo: makePhoto('R1') },
+  { id: 'R2', name: 'MIGUEL BUSTAMANTE', photo: makePhoto('R2') },
+  { id: 'R3', name: 'JOHAN LUYO', photo: makePhoto('R3') }
+]
 };
 
 function hasAppsScript() {
@@ -72,7 +72,8 @@ function buildEmptyState() {
   return Array.from({ length: config.columns }, () =>
     Array.from({ length: config.rows }, () => ({
       clientId: '',
-      status: 'PENDIENTE'
+      status: 'PENDIENTE',
+      leaderId: ''
     }))
   );
 }
