@@ -434,17 +434,42 @@ button:hover{
   border:1px dashed rgba(255,255,255,.16);
 }
 
-.cell.pending{
-  box-shadow:inset 0 0 0 1px rgba(245,158,11,.22);
+.cell.picking{
+  box-shadow:inset 0 0 0 1px rgba(239,68,68,.28);
 }
 
-.cell.progress{
-  box-shadow:inset 0 0 0 1px rgba(59,130,246,.22);
+.cell.armado{
+  box-shadow:inset 0 0 0 1px rgba(245,158,11,.28);
 }
 
-.cell.shipped{
-  box-shadow:inset 0 0 0 1px rgba(16,185,129,.22);
+.cell.pendiente{
+  box-shadow:inset 0 0 0 1px rgba(59,130,246,.28);
 }
+
+.cell.realizado{
+  box-shadow:inset 0 0 0 1px rgba(16,185,129,.28);
+}
+
+.badge.picking{
+  background:rgba(239,68,68,.18);
+  color:#fca5a5;
+}
+
+.badge.armado{
+  background:rgba(245,158,11,.18);
+  color:#fcd34d;
+}
+
+.badge.pendiente{
+  background:rgba(59,130,246,.18);
+  color:#93c5fd;
+}
+
+.badge.realizado{
+  background:rgba(16,185,129,.18);
+  color:#6ee7b7;
+}
+
 
 .badge-row{
   display:flex;
