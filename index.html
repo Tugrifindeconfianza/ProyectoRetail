@@ -10,30 +10,27 @@
 </head>
 
 <body>
-<div class="page-header">
-  <div class="title-block">
-    <h1>Layout Outbound Retail</h1>
-    <p>Reporte de despachos Outbound Retail.</p>
-  </div>
+  <div class="page-header">
+    <div class="title-block">
+      <h1>Layout Outbound Retail</h1>
+      <p>Reporte de despachos Outbound Retail.</p>
+    </div>
 
-  <div class="header-side">
-    <div class="header-stamp leaders-header">
-  <div class="leaders-title">Equipo Encargado Retail</div>
-  <select id="modalLeaderSelect"></select>
-  <div id="leaders" class="leaders-grid"></div>
-</div>
-
-    <div class="leaders-panel">
-      <div class="leaders-panel-header">
-        <div>
-          <p>Personal encargado de picking, armado o despacho.</p>
-        </div>
-      </div>
-      <div id="leaders" class="leaders-grid"></div>
+    <div class="header-stamp" id="lastSaved">
+      Estado: pendiente de guardado
     </div>
   </div>
-</div>
 
+  <div class="leaders-panel">
+    <div class="leaders-panel-header">
+      <div>
+        <h2>Equipo Responsable</h2>
+        <p>Visual ejecutivo para seguimiento operativo y control del layout.</p>
+      </div>
+    </div>
+
+    <div id="leaders" class="leaders-grid"></div>
+  </div>
 
   <div class="dashboard-shell">
     <div class="controls-grid">
@@ -76,10 +73,10 @@
     <div class="metrics" id="metrics"></div>
 
     <div class="legend">
-      <div class="legend-item"><span class="dot" style="background:#f59e0b"></span>PICKING</div>
-      <div class="legend-item"><span class="dot" style="background:#3b82f6"></span>ARMADO</div>
-      <div class="legend-item"><span class="dot" style="background:#10b981"></span>PENDIENTE</div>
-      <div class="legend-item"><span class="dot" style="background:#64748b"></span>REALIZADO</div>
+      <div class="legend-item"><span class="dot" style="background:#f59e0b"></span>PENDIENTE</div>
+      <div class="legend-item"><span class="dot" style="background:#3b82f6"></span>EN PROGRESO</div>
+      <div class="legend-item"><span class="dot" style="background:#10b981"></span>DESPACHADO</div>
+      <div class="legend-item"><span class="dot" style="background:#64748b"></span>DISPONIBLE</div>
     </div>
 
     <div class="scene">
