@@ -144,25 +144,48 @@ function loadApp() {
 }
 
 function fillSelectors() {
-  document.getElementById('modalLeaderSelect').innerHTML =
-  `<option value="">Sin responsable</option>` +
-  config.leaders.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  const clientSelect = document.getElementById('clientSelect');
+  const columnSelect = document.getElementById('columnSelect');
+  const statusSelect = document.getElementById('statusSelect');
+  const modalClientSelect = document.getElementById('modalClientSelect');
+  const modalStatusSelect = document.getElementById('modalStatusSelect');
+  const modalLeaderSelect = document.getElementById('modalLeaderSelect');
 
-  document.getElementById('columnSelect').innerHTML =
-    Array.from({ length: config.columns }, (_, i) => {
-      const n = String(i + 1).padStart(2, '0');
-      return `<option value="${i}">Columna ${n}</option>`;
-    }).join('');
+  if (clientSelect) {
+    clientSelect.innerHTML =
+      `<option value="">Selecciona cliente</option>` +
+      config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  }
 
-  document.getElementById('statusSelect').innerHTML =
-    config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (columnSelect) {
+    columnSelect.innerHTML =
+      Array.from({ length: config.columns }, (_, i) => {
+        const n = String(i + 1).padStart(2, '0');
+        return `<option value="${i}">Columna ${n}</option>`;
+      }).join('');
+  }
 
-  document.getElementById('modalClientSelect').innerHTML =
-    `<option value="">Sin asignar</option>` +
-    config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  if (statusSelect) {
+    statusSelect.innerHTML =
+      config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
 
-  document.getElementById('modalStatusSelect').innerHTML =
-    config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (modalClientSelect) {
+    modalClientSelect.innerHTML =
+      `<option value="">Sin asignar</option>` +
+      config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  }
+
+  if (modalStatusSelect) {
+    modalStatusSelect.innerHTML =
+      config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+
+  if (modalLeaderSelect) {
+    modalLeaderSelect.innerHTML =
+      `<option value="">Sin responsable</option>` +
+      config.leaders.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  }
 }
 
 function getClientById(id) {
