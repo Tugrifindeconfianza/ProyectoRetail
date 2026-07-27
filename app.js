@@ -2,31 +2,13 @@ let config = {};
 let state = [];
 let selectedCell = null;
 
-function escapeHtml(value = '') {
-  return String(value)
-    .replaceAll('&', '&')
-    .replaceAll('<', '<')
-    .replaceAll('>', '>')
-    .replaceAll('"', '"')
-    .replaceAll("'", '&#039;');
-}
-
-function setTextById(id, text) {
-  const element = document.getElementById(id);
-  if (element) {
-    element.textContent = text;
-  }
-}
-
 const makeLogo = (text) => {
-  const safeText = escapeHtml(text);
-
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="260" height="90">
       <rect width="100%" height="100%" rx="18" fill="#e5e7eb"/>
       <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle"
         font-family="Arial" font-size="24" font-weight="800" fill="#111827">
-        ${safeText}
+        ${text}
       </text>
     </svg>
   `;
@@ -35,8 +17,6 @@ const makeLogo = (text) => {
 };
 
 const makePhoto = (text) => {
-  const safeText = escapeHtml(text);
-
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="400" height="500">
       <rect width="100%" height="100%" fill="#1e293b"/>
@@ -44,7 +24,7 @@ const makePhoto = (text) => {
       <rect x="95" y="285" width="210" height="130" rx="65" fill="#334155"/>
       <text x="50%" y="88%" dominant-baseline="middle" text-anchor="middle"
         font-family="Arial" font-size="28" font-weight="800" fill="#f8fafc">
-        ${safeText}
+        ${text}
       </text>
     </svg>
   `;
@@ -54,21 +34,17 @@ const makePhoto = (text) => {
 
 const fallbackConfig = {
   columns: 7,
-  rows: 12,
-  statusOptions: ['PICKING', 'ARMADO', 'PENDIENTE', 'REALIZADO'],
+  rows: 5,
+  statusOptions: ['PENDIENTE', 'EN PROGRESO', 'DESPACHADO'],
   clients: [
-    { id: 'Cliente-1', name: 'PROMART', logo: makeLogo('PROMART') },
-    { id: 'Cliente-2', name: 'SODIMAC', logo: makeLogo('SODIMAC') },
-    { id: 'Cliente-3', name: 'TOTTUS', logo: makeLogo('TOTTUS') },
-    { id: 'Cliente-4', name: 'CENCOSUD', logo: makeLogo('CENCOSUD') },
-    { id: 'Cliente-5', name: 'SSPP', logo: makeLogo('SSPP') },
-    { id: 'Cliente-6', name: 'MAYORSA', logo: makeLogo('MAYORSA') },
-    { id: 'Cliente-7', name: 'CORP. VEGA', logo: makeLogo('CORP. VEGA') }
+    { id: 'cliente-1', name: 'Cliente 1', logo: makeLogo('Cliente 1') },
+    { id: 'cliente-2', name: 'Cliente 2', logo: makeLogo('Cliente 2') },
+    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('Cliente 3') }
   ],
   leaders: [
-    { id: 'R1', name: 'WILLIAM VALDIVIA', photo: makePhoto('R1') },
-    { id: 'R2', name: 'MIGUEL BUSTAMANTE', photo: makePhoto('R2') },
-    { id: 'R3', name: 'JOHAN LUYO', photo: makePhoto('R3') }
+    { name: 'Responsable 1', photo: makePhoto('R1') },
+    { name: 'Responsable 2', photo: makePhoto('R2') },
+    { name: 'Responsable 3', photo: makePhoto('R3') }
   ]
 };
 
@@ -82,15 +58,9 @@ function normalizeConfig(cfg = {}) {
   return {
     columns: cfg.columns || fallbackConfig.columns,
     rows: cfg.rows || fallbackConfig.rows,
-    statusOptions: Array.isArray(cfg.statusOptions) && cfg.statusOptions.length
-      ? cfg.statusOptions
-      : fallbackConfig.statusOptions,
-    clients: Array.isArray(cfg.clients) && cfg.clients.length
-      ? cfg.clients
-      : fallbackConfig.clients,
-    leaders: Array.isArray(cfg.leaders) && cfg.leaders.length
-      ? cfg.leaders
-      : fallbackConfig.leaders
+    statusOptions: Array.isArray(cfg.statusOptions) ? cfg.statusOptions : fallbackConfig.statusOptions,
+    clients: Array.isArray(cfg.clients) ? cfg.clients : fallbackConfig.clients,
+    leaders: Array.isArray(cfg.leaders) ? cfg.leaders : fallbackConfig.leaders
   };
 }
 
@@ -98,8 +68,7 @@ function buildEmptyState() {
   return Array.from({ length: config.columns }, () =>
     Array.from({ length: config.rows }, () => ({
       clientId: '',
-      status: 'PENDIENTE',
-      leaderId: ''
+      status: 'PENDIENTE'
     }))
   );
 }
@@ -119,8 +88,7 @@ function normalizeState(saved) {
 
       return {
         clientId: cell.clientId || '',
-        status: config.statusOptions.includes(cell.status) ? cell.status : 'PENDIENTE',
-        leaderId: cell.leaderId || ''
+        status: config.statusOptions.includes(cell.status) ? cell.status : 'PENDIENTE'
       };
     });
   });
@@ -160,99 +128,46 @@ function loadApp() {
   render();
   init3DEffects();
 
-  setTextById('lastSaved', 'Modo GitHub/local: datos guardados en el navegador');
+  document.getElementById('lastSaved').textContent = 'Modo GitHub/local: datos guardados en el navegador';
 }
 
 function fillSelectors() {
-  const clientSelect = document.getElementById('clientSelect');
-  const columnSelect = document.getElementById('columnSelect');
-  const statusSelect = document.getElementById('statusSelect');
-  const modalClientSelect = document.getElementById('modalClientSelect');
-  const modalStatusSelect = document.getElementById('modalStatusSelect');
-  const modalLeaderSelect = document.getElementById('modalLeaderSelect');
+  document.getElementById('clientSelect').innerHTML =
+    config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
-  if (clientSelect) {
-    clientSelect.innerHTML =
-      `<option value="">Selecciona cliente</option>` +
-      config.clients
-        .map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`)
-        .join('');
-  }
+  document.getElementById('columnSelect').innerHTML =
+    Array.from({ length: config.columns }, (_, i) => {
+      const n = String(i + 1).padStart(2, '0');
+      return `<option value="${i}">Columna ${n}</option>`;
+    }).join('');
 
-  if (columnSelect) {
-    columnSelect.innerHTML =
-      Array.from({ length: config.columns }, (_, i) => {
-        const n = String(i + 1).padStart(2, '0');
-        return `<option value="${i}">Columna ${n}</option>`;
-      }).join('');
-  }
+  document.getElementById('statusSelect').innerHTML =
+    config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
 
-  if (statusSelect) {
-    statusSelect.innerHTML =
-      config.statusOptions
-        .map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`)
-        .join('');
-  }
+  document.getElementById('modalClientSelect').innerHTML =
+    `<option value="">Sin asignar</option>` +
+    config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 
-  if (modalClientSelect) {
-    modalClientSelect.innerHTML =
-      `<option value="">Sin asignar</option>` +
-      config.clients
-        .map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`)
-        .join('');
-  }
-
-  if (modalStatusSelect) {
-    modalStatusSelect.innerHTML =
-      config.statusOptions
-        .map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`)
-        .join('');
-  }
-
-  if (modalLeaderSelect) {
-    modalLeaderSelect.innerHTML =
-      `<option value="">Sin responsable</option>` +
-      config.leaders
-        .map(l => `<option value="${escapeHtml(l.id)}">${escapeHtml(l.name)}</option>`)
-        .join('');
-  }
+  document.getElementById('modalStatusSelect').innerHTML =
+    config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
 }
 
 function getClientById(id) {
   return config.clients.find(c => c.id === id);
 }
 
-function getLeaderById(id) {
-  return config.leaders.find(l => l.id === id);
-}
-
 function isColumnOccupied(colIndex) {
-  return Array.isArray(state[colIndex]) && state[colIndex].some(cell => cell.clientId);
+  return state[colIndex].some(cell => cell.clientId);
 }
 
 function assignClient() {
-  const clientSelect = document.getElementById('clientSelect');
-  const statusSelect = document.getElementById('statusSelect');
-  const columnSelect = document.getElementById('columnSelect');
-  const fullColumnMode = document.getElementById('fullColumnMode');
-
-  if (!clientSelect || !statusSelect || !columnSelect) {
-    setStatus('Faltan controles HTML para asignar cliente.');
-    return;
-  }
-
-  const clientId = clientSelect.value;
-  const status = statusSelect.value || 'PENDIENTE';
-  const colIndex = Number(columnSelect.value);
-  const fullColumn = fullColumnMode ? fullColumnMode.checked : false;
+  const clientId = document.getElementById('clientSelect').value;
+  const status = document.getElementById('statusSelect').value;
+  const colIndex = Number(document.getElementById('columnSelect').value);
+  const fullColumn = document.getElementById('fullColumnMode').checked;
 
   if (!clientId) {
     setStatus('Selecciona un cliente.');
-    return;
-  }
-
-  if (!Number.isInteger(colIndex) || colIndex < 0 || colIndex >= config.columns) {
-    setStatus('Selecciona una columna válida.');
     return;
   }
 
@@ -263,7 +178,7 @@ function assignClient() {
     }
 
     for (let r = 0; r < config.rows; r++) {
-      state[colIndex][r] = { clientId, status, leaderId: '' };
+      state[colIndex][r] = { clientId, status };
     }
 
     render();
@@ -279,8 +194,7 @@ function assignClient() {
     return;
   }
 
-  state[colIndex][rowIndex] = { clientId, status, leaderId: '' };
-
+  state[colIndex][rowIndex] = { clientId, status };
   render();
   init3DEffects();
 
@@ -290,22 +204,250 @@ function assignClient() {
 }
 
 function statusClass(status) {
-  if (status === 'PICKING') return 'picking';
-  if (status === 'ARMADO') return 'armado';
-  if (status === 'PENDIENTE') return 'pendiente';
-  if (status === 'REALIZADO') return 'realizado';
+  if (status === 'PENDIENTE') return 'pending';
+  if (status === 'EN PROGRESO') return 'progress';
+  if (status === 'DESPACHADO') return 'shipped';
   return 'empty';
 }
 
 function renderMetrics() {
-  const container = document.getElementById('metrics');
-  if (!container) return;
-
-  const cells = state.flat();
-
   const total = config.rows * config.columns;
-  const occupied = cells.filter(cell => cell.clientId).length;
+  const occupied = state.flat().filter(c => c.clientId).length;
   const available = total - occupied;
+  const shipped = state.flat().filter(c => c.clientId && c.status === 'DESPACHADO').length;
 
-  const picking = cells.filter(cell => cell.clientId && cell.status === 'PICKING').length;
-  const armado = cells.filter
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">TOTAL POSICIONES</div>
+      <div class="metric-value">${total}</div>
+      <div class="metric-sub">Capacidad total del layout</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-label">OCUPADAS</div>
+      <div class="metric-value">${occupied}</div>
+      <div class="metric-sub">${Math.round((occupied / total) * 100)}% de ocupación</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-label">DISPONIBLES</div>
+      <div class="metric-value">${available}</div>
+      <div class="metric-sub">Espacios libres para asignación</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-label">DESPACHADAS</div>
+      <div class="metric-value">${shipped}</div>
+      <div class="metric-sub">Posiciones cerradas o listas</div>
+    </div>
+  `;
+}
+
+function render() {
+  renderMetrics();
+
+  const container = document.getElementById('layout');
+  container.innerHTML = '';
+
+  for (let c = 0; c < config.columns; c++) {
+    const used = state[c].filter(cell => cell.clientId).length;
+    const progress = Math.round((used / config.rows) * 100);
+
+    const col = document.createElement('div');
+    col.className = 'column';
+
+    const header = document.createElement('div');
+    header.className = 'column-header';
+    header.innerHTML = `
+      <div class="column-top">
+        <div class="column-number">${String(c + 1).padStart(2, '0')}</div>
+        <div class="column-count">${used}/${config.rows}</div>
+      </div>
+
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${progress}%"></div>
+      </div>
+    `;
+
+    col.appendChild(header);
+
+    for (let r = 0; r < config.rows; r++) {
+      const cellData = state[c][r];
+      const cell = document.createElement('div');
+      const cellStatusClass = cellData.clientId ? statusClass(cellData.status) : 'empty';
+
+      cell.className = `cell ${cellData.clientId ? '' : 'empty'} ${cellStatusClass}`;
+
+      if (cellData.clientId) {
+        const client = getClientById(cellData.clientId) || {
+          name: 'Cliente no encontrado',
+          logo: makeLogo('N/A')
+        };
+
+        cell.innerHTML = `
+          <div class="badge-row">
+            <span class="badge ${statusClass(cellData.status)}">${cellData.status}</span>
+            <span class="slot-id">${String(r + 1).padStart(2, '0')}</span>
+          </div>
+
+          <div class="logo-wrap">
+            <img class="logo" src="${client.logo}" alt="${client.name}">
+          </div>
+
+          <div class="client-name">${client.name}</div>
+        `;
+      } else {
+        cell.innerHTML = `
+          <div class="badge-row">
+            <span class="badge empty">DISPONIBLE</span>
+            <span class="slot-id">${String(r + 1).padStart(2, '0')}</span>
+          </div>
+
+          <div class="logo-wrap">
+            <div class="empty-text">Sin asignación</div>
+          </div>
+
+          <div class="client-name" style="color:#64748b">-</div>
+        `;
+      }
+
+      cell.onclick = () => openModal(c, r);
+      col.appendChild(cell);
+    }
+
+    container.appendChild(col);
+  }
+}
+
+function openModal(c, r) {
+  selectedCell = { c, r };
+  const cell = state[c][r];
+
+  document.getElementById('modalPosition').textContent =
+    `Columna ${String(c + 1).padStart(2, '0')} · Posición ${String(r + 1).padStart(2, '0')}`;
+
+  document.getElementById('modalClientSelect').value = cell.clientId || '';
+  document.getElementById('modalStatusSelect').value = cell.status || 'PENDIENTE';
+  document.getElementById('modalBackdrop').classList.add('show');
+}
+
+function closeModal() {
+  selectedCell = null;
+  document.getElementById('modalBackdrop').classList.remove('show');
+}
+
+function backdropClose(event) {
+  if (event.target.id === 'modalBackdrop') {
+    closeModal();
+  }
+}
+
+function saveCellFromModal() {
+  if (!selectedCell) return;
+
+  const clientId = document.getElementById('modalClientSelect').value;
+  const status = document.getElementById('modalStatusSelect').value;
+  const { c, r } = selectedCell;
+
+  if (!clientId) {
+    state[c][r] = { clientId: '', status: 'PENDIENTE' };
+  } else {
+    state[c][r] = { clientId, status };
+  }
+
+  closeModal();
+  render();
+  init3DEffects();
+  setStatus('Posición actualizada correctamente.');
+}
+
+function removeCellFromModal() {
+  if (!selectedCell) return;
+
+  const { c, r } = selectedCell;
+
+  state[c][r] = { clientId: '', status: 'PENDIENTE' };
+
+  closeModal();
+  render();
+  init3DEffects();
+  setStatus('Posición liberada.');
+}
+
+function init3DEffects() {
+  document.querySelectorAll('.column').forEach(col => {
+    col.onmousemove = e => {
+      const rect = col.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const rotateX = 10 + ((rect.height / 2 - y) / rect.height) * 10;
+      const rotateY = -6 + ((x - rect.width / 2) / rect.width) * 12;
+
+      col.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
+    };
+
+    col.onmouseleave = () => {
+      col.style.transform = 'rotateX(10deg) rotateY(-6deg)';
+    };
+  });
+}
+
+function saveLayout() {
+  if (hasAppsScript()) {
+    google.script.run.withSuccessHandler(() => {
+      const now = new Date().toLocaleString('es-PE');
+      document.getElementById('lastSaved').textContent = `Último guardado: ${now}`;
+      setStatus('Layout guardado correctamente.');
+    }).saveLayoutData(state);
+
+    return;
+  }
+
+  localStorage.setItem('layoutData', JSON.stringify(state));
+
+  const now = new Date().toLocaleString('es-PE');
+  document.getElementById('lastSaved').textContent = `Último guardado local: ${now}`;
+  setStatus('Layout guardado correctamente en el navegador.');
+}
+
+function resetLayout() {
+  const ok = confirm('¿Deseas limpiar todo el layout?');
+
+  if (!ok) return;
+
+  state = buildEmptyState();
+
+  render();
+  init3DEffects();
+  setStatus('Layout reiniciado.');
+}
+
+function setStatus(text) {
+  document.getElementById('status').textContent = text;
+
+  setTimeout(() => {
+    document.getElementById('status').textContent = '';
+  }, 3200);
+}
+
+function renderLeaders() {
+  const container = document.getElementById('leaders');
+
+  if (!container || !config.leaders) return;
+
+  container.innerHTML = config.leaders.map((person, i) => `
+    <div class="leader-card">
+      <div class="leader-photo-wrap">
+        <img class="leader-photo" src="${person.photo}" alt="${person.name}">
+      </div>
+
+      <div class="leader-info">
+        <div class="leader-name">${person.name}</div>
+        <div class="leader-tag">RESPONSABLE ${String(i + 1).padStart(2, '0')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+loadApp();
