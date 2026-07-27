@@ -92,8 +92,9 @@ function normalizeState(saved) {
       const cell = col[r] || {};
 
       return {
-        clientId: cell.clientId || '',
-        status: config.statusOptions.includes(cell.status) ? cell.status : 'PENDIENTE'
+  clientId: cell.clientId || '',
+  status: config.statusOptions.includes(cell.status) ? cell.status : 'PENDIENTE',
+  leaderId: cell.leaderId || ''
       };
     });
   });
