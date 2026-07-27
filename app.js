@@ -251,7 +251,7 @@ function renderMetrics() {
   const total = config.rows * config.columns;
   const occupied = state.flat().filter(c => c.clientId).length;
   const available = total - occupied;
-  const shipped = state.flat().filter(c => c.clientId && c.status === 'DESPACHADO').length;
+  const realizado = state.flat().filter(c => c.clientId && c.status === 'REALIZADO').length;
 
   document.getElementById('metrics').innerHTML = `
     <div class="metric-card">
