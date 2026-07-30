@@ -41,11 +41,6 @@ const fallbackConfig = {
     { id: 'cliente-2', name: 'Cliente 2', logo: makeLogo('Cliente 2') },
     { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('Cliente 3') }
   ],
-  leaders: [
-    { name: 'Responsable 1', photo: makePhoto('R1') },
-    { name: 'Responsable 2', photo: makePhoto('R2') },
-    { name: 'Responsable 3', photo: makePhoto('R3') }
-  ]
 };
 
 function hasAppsScript() {
