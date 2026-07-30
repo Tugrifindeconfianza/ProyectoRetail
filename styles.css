@@ -784,8 +784,9 @@ button:hover {
 }
 
 .responsible-list {
-  display: grid;
-  gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .responsible-member {
