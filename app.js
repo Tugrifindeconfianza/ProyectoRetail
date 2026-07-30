@@ -128,7 +128,7 @@ function loadApp() {
   render();
   init3DEffects();
 
-  document.getElementById('lastSaved').textContent = 'Modo GitHub/local: datos guardados en el navegador';
+  document.getElementById('lastSaved').textContent = "";
 }
 
 function fillSelectors() {
