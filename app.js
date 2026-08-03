@@ -33,8 +33,8 @@ const makePhoto = (text) => {
 };
 
 const fallbackConfig = {
-  columns: 7,
-  rows: 5,
+  columns: 13,
+  rows: 12,
   statusOptions: ['PENDIENTE', 'EN PROGRESO', 'DESPACHADO'],
   clients: [
     { id: 'cliente-1', name: 'Cliente 1', logo: makeLogo('Cliente 1') },
