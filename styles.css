@@ -400,9 +400,9 @@ button:hover {
 
 .layout {
   display: grid;
-  grid-template-columns: repeat(14, minmax(210px, 1fr));
+  grid-template-columns: repeat(7, minmax(185px, 1fr));
   gap: 20px;
-  min-width: 3080px;
+  min-width: 1360px;
   transform-style: preserve-3d;
 }
 
@@ -693,10 +693,10 @@ button:hover {
   }
 
   .layout {
-  grid-template-columns: repeat(14, minmax(185px, 1fr));
-  min-width: 2800px;
-}
-  
+    grid-template-columns: repeat(7, minmax(210px, 1fr));
+    min-width: 1540px;
+  }
+
   .cell {
     min-height: 132px;
   }
@@ -830,13 +830,4 @@ button:hover {
   .responsible-team {
     width: 100%;
   }
-}
-.scene {
-  margin-top: 28px !important;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-}
-
-.column {
-  min-height: auto !important;
 }
