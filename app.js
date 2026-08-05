@@ -45,15 +45,15 @@ const fallbackConfig = {
   columns: 14,
   rowsByColumn: ROWS_BY_COLUMN,
   statusOptions: ['ARMADO', 'ETIQUETADO', 'AUDITORIA', 'REALIZADO'],
-  clients: [
-    { id: 'promart', name: 'PROMART', logo: makeLogo('PROMART') },
-    { id: 'sodimac', name: 'SODIMAC', logo: makeLogo('SODIMAC') },
-    { id: 'cencosud', name: 'CENCOSUD', logo: makeLogo('CENCOSUD') },
-    { id: 'mayorsa', name: 'MAYORSA', logo: makeLogo('MAYORSA') },
-    { id: 'corp-vega', name: 'CORP. VEGA', logo: makeLogo('CORP. VEGA') },
-    { id: 'tottus', name: 'TOTTUS', logo: makeLogo('TOTTUS') },
-    { id: 'sspp', name: 'SSPP', logo: makeLogo('SSPP') }
-  ],
+clients: [
+  { id: 'promart', name: 'PROMART', logo: 'assets/logos/promart.png' },
+  { id: 'sodimac', name: 'SODIMAC', logo: 'assets/logos/sodimac.png' },
+  { id: 'cencosud', name: 'CENCOSUD', logo: 'assets/logos/cencosud.png' },
+  { id: 'mayorsa', name: 'MAYORSA', logo: 'assets/logos/mayorsa.png' },
+  { id: 'corp-vega', name: 'CORP. VEGA', logo: 'assets/logos/corp-vega.png' },
+  { id: 'tottus', name: 'TOTTUS', logo: 'assets/logos/tottus.png' },
+  { id: 'sspp', name: 'SSPP', logo: 'assets/logos/sspp.png' }
+],
   leaders: []
 };
 
