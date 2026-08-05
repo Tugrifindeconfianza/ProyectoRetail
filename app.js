@@ -1,953 +1,448 @@
-(() => {
-  "use strict";
+let config = {};
+let state = [];
+let selectedCell = null;
 
-  const STORAGE_KEY = "tablero_14_columnas_v1";
+const makeLogo = (text) => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="260" height="90">
+      <rect width="100%" height="100%" rx="18" fill="#e5e7eb"/>
+      <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle"
+        font-family="Arial" font-size="24" font-weight="800" fill="#111827">
+        ${text}
+      </text>
+    </svg>
+  `;
 
-  const CLIENTES = [
-    "PROMART",
-    "SODIMAC",
-    "CENCOSUD",
-    "MAYORSA",
-    "CORP. VEGA",
-    "TOTTUS",
-    "SSPP"
-  ];
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
 
-  const ESTADOS = [
-    "ARMADO",
-    "ETIQUETADO",
-    "AUDITORIA",
-    "REALIZADO"
-  ];
+const makePhoto = (text) => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="400" height="500">
+      <rect width="100%" height="100%" fill="#1e293b"/>
+      <circle cx="200" cy="170" r="80" fill="#3b82f6"/>
+      <rect x="95" y="285" width="210" height="130" rx="65" fill="#334155"/>
+      <text x="50%" y="88%" dominant-baseline="middle" text-anchor="middle"
+        font-family="Arial" font-size="28" font-weight="800" fill="#f8fafc">
+        ${text}
+      </text>
+    </svg>
+  `;
 
-  const COLUMNS = Array.from({ length: 14 }, (_, index) => {
-    const number = index + 1;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
 
-    return {
-      number,
-      header: number <= 4 ? "ARMADO" : "DESPACHO",
-      rows: getRowsByColumn(number)
+const fallbackConfig = {
+  columns: 7,
+  rows: 5,
+  statusOptions: ['PENDIENTE', 'EN PROGRESO', 'DESPACHADO'],
+  clients: [
+    { id: 'cliente-1', name: 'Cliente 1', logo: makeLogo('Cliente 1') },
+    { id: 'cliente-2', name: 'Cliente 2', logo: makeLogo('Cliente 2') },
+    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('Cliente 3') }
+  ],
+};
+
+function hasAppsScript() {
+  return typeof google !== 'undefined' &&
+    google.script &&
+    google.script.run;
+}
+
+function normalizeConfig(cfg = {}) {
+  return {
+    columns: cfg.columns || fallbackConfig.columns,
+    rows: cfg.rows || fallbackConfig.rows,
+    statusOptions: Array.isArray(cfg.statusOptions) ? cfg.statusOptions : fallbackConfig.statusOptions,
+    clients: Array.isArray(cfg.clients) ? cfg.clients : fallbackConfig.clients,
+    leaders: Array.isArray(cfg.leaders) ? cfg.leaders : fallbackConfig.leaders
+  };
+}
+
+function buildEmptyState() {
+  return Array.from({ length: config.columns }, () =>
+    Array.from({ length: config.rows }, () => ({
+      clientId: '',
+      status: 'PENDIENTE'
+    }))
+  );
+}
+
+function normalizeState(saved) {
+  const empty = buildEmptyState();
+
+  if (!Array.isArray(saved) || saved.length !== config.columns) {
+    return empty;
+  }
+
+  return Array.from({ length: config.columns }, (_, c) => {
+    const col = Array.isArray(saved[c]) ? saved[c] : [];
+
+    return Array.from({ length: config.rows }, (_, r) => {
+      const cell = col[r] || {};
+
+      return {
+        clientId: cell.clientId || '',
+        status: config.statusOptions.includes(cell.status) ? cell.status : 'PENDIENTE'
+      };
+    });
+  });
+}
+
+function loadApp() {
+  if (hasAppsScript()) {
+    google.script.run.withSuccessHandler(cfg => {
+      config = normalizeConfig(cfg);
+      fillSelectors();
+      renderLeaders();
+
+      google.script.run.withSuccessHandler(saved => {
+        state = normalizeState(saved);
+        render();
+        init3DEffects();
+      }).getLayoutData();
+    }).getConfig();
+
+    return;
+  }
+
+  config = normalizeConfig();
+
+  fillSelectors();
+  renderLeaders();
+
+  let saved = null;
+
+  try {
+    saved = JSON.parse(localStorage.getItem('layoutData'));
+  } catch (error) {
+    saved = null;
+  }
+
+  state = normalizeState(saved);
+  render();
+  init3DEffects();
+
+  document.getElementById('lastSaved').textContent = "";
+}
+
+function fillSelectors() {
+  document.getElementById('clientSelect').innerHTML =
+    config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+  document.getElementById('columnSelect').innerHTML =
+    Array.from({ length: config.columns }, (_, i) => {
+      const n = String(i + 1).padStart(2, '0');
+      return `<option value="${i}">Columna ${n}</option>`;
+    }).join('');
+
+  document.getElementById('statusSelect').innerHTML =
+    config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
+
+  document.getElementById('modalClientSelect').innerHTML =
+    `<option value="">Sin asignar</option>` +
+    config.clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+  document.getElementById('modalStatusSelect').innerHTML =
+    config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+function getClientById(id) {
+  return config.clients.find(c => c.id === id);
+}
+
+function isColumnOccupied(colIndex) {
+  return state[colIndex].some(cell => cell.clientId);
+}
+
+function assignClient() {
+  const clientId = document.getElementById('clientSelect').value;
+  const status = document.getElementById('statusSelect').value;
+  const colIndex = Number(document.getElementById('columnSelect').value);
+  const fullColumn = document.getElementById('fullColumnMode').checked;
+
+  if (!clientId) {
+    setStatus('Selecciona un cliente.');
+    return;
+  }
+
+  if (fullColumn) {
+    if (isColumnOccupied(colIndex)) {
+      const ok = confirm('La columna ya contiene datos. ¿Deseas reemplazarla completa?');
+      if (!ok) return;
+    }
+
+    for (let r = 0; r < config.rows; r++) {
+      state[colIndex][r] = { clientId, status };
+    }
+
+    render();
+    init3DEffects();
+    setStatus(`Columna ${String(colIndex + 1).padStart(2, '0')} actualizada completamente.`);
+    return;
+  }
+
+  const rowIndex = state[colIndex].findIndex(cell => !cell.clientId);
+
+  if (rowIndex === -1) {
+    setStatus('La columna seleccionada ya está completa.');
+    return;
+  }
+
+  state[colIndex][rowIndex] = { clientId, status };
+  render();
+  init3DEffects();
+
+  setStatus(
+    `Asignación realizada en columna ${String(colIndex + 1).padStart(2, '0')}, posición ${String(rowIndex + 1).padStart(2, '0')}.`
+  );
+}
+
+function statusClass(status) {
+  if (status === 'PENDIENTE') return 'pending';
+  if (status === 'EN PROGRESO') return 'progress';
+  if (status === 'DESPACHADO') return 'shipped';
+  return 'empty';
+}
+
+function renderMetrics() {
+  const total = config.rows * config.columns;
+  const occupied = state.flat().filter(c => c.clientId).length;
+  const available = total - occupied;
+  const shipped = state.flat().filter(c => c.clientId && c.status === 'DESPACHADO').length;
+
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric-card">
+      <div class="metric-label">TOTAL POSICIONES</div>
+      <div class="metric-value">${total}</div>
+      <div class="metric-sub">Capacidad total del layout</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-label">OCUPADAS</div>
+      <div class="metric-value">${occupied}</div>
+      <div class="metric-sub">${Math.round((occupied / total) * 100)}% de ocupación</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-label">DISPONIBLES</div>
+      <div class="metric-value">${available}</div>
+      <div class="metric-sub">Espacios libres para asignación</div>
+    </div>
+
+    <div class="metric-card">
+      <div class="metric-label">DESPACHADAS</div>
+      <div class="metric-value">${shipped}</div>
+      <div class="metric-sub">Posiciones cerradas o listas</div>
+    </div>
+  `;
+}
+
+function render() {
+  renderMetrics();
+
+  const container = document.getElementById('layout');
+  container.innerHTML = '';
+
+  for (let c = 0; c < config.columns; c++) {
+    const used = state[c].filter(cell => cell.clientId).length;
+    const progress = Math.round((used / config.rows) * 100);
+
+    const col = document.createElement('div');
+    col.className = 'column';
+
+    const header = document.createElement('div');
+    header.className = 'column-header';
+    header.innerHTML = `
+      <div class="column-top">
+        <div class="column-number">${String(c + 1).padStart(2, '0')}</div>
+        <div class="column-count">${used}/${config.rows}</div>
+      </div>
+
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${progress}%"></div>
+      </div>
+    `;
+
+    col.appendChild(header);
+
+    for (let r = 0; r < config.rows; r++) {
+      const cellData = state[c][r];
+      const cell = document.createElement('div');
+      const cellStatusClass = cellData.clientId ? statusClass(cellData.status) : 'empty';
+
+      cell.className = `cell ${cellData.clientId ? '' : 'empty'} ${cellStatusClass}`;
+
+      if (cellData.clientId) {
+        const client = getClientById(cellData.clientId) || {
+          name: 'Cliente no encontrado',
+          logo: makeLogo('N/A')
+        };
+
+        cell.innerHTML = `
+          <div class="badge-row">
+            <span class="badge ${statusClass(cellData.status)}">${cellData.status}</span>
+            <span class="slot-id">${String(r + 1).padStart(2, '0')}</span>
+          </div>
+
+          <div class="logo-wrap">
+            <img class="logo" src="${client.logo}" alt="${client.name}">
+          </div>
+
+          <div class="client-name">${client.name}</div>
+        `;
+      } else {
+        cell.innerHTML = `
+          <div class="badge-row">
+            <span class="badge empty">DISPONIBLE</span>
+            <span class="slot-id">${String(r + 1).padStart(2, '0')}</span>
+          </div>
+
+          <div class="logo-wrap">
+            <div class="empty-text">Sin asignación</div>
+          </div>
+
+          <div class="client-name" style="color:#64748b">-</div>
+        `;
+      }
+
+      cell.onclick = () => openModal(c, r);
+      col.appendChild(cell);
+    }
+
+    container.appendChild(col);
+  }
+}
+
+function openModal(c, r) {
+  selectedCell = { c, r };
+  const cell = state[c][r];
+
+  document.getElementById('modalPosition').textContent =
+    `Columna ${String(c + 1).padStart(2, '0')} · Posición ${String(r + 1).padStart(2, '0')}`;
+
+  document.getElementById('modalClientSelect').value = cell.clientId || '';
+  document.getElementById('modalStatusSelect').value = cell.status || 'PENDIENTE';
+  document.getElementById('modalBackdrop').classList.add('show');
+}
+
+function closeModal() {
+  selectedCell = null;
+  document.getElementById('modalBackdrop').classList.remove('show');
+}
+
+function backdropClose(event) {
+  if (event.target.id === 'modalBackdrop') {
+    closeModal();
+  }
+}
+
+function saveCellFromModal() {
+  if (!selectedCell) return;
+
+  const clientId = document.getElementById('modalClientSelect').value;
+  const status = document.getElementById('modalStatusSelect').value;
+  const { c, r } = selectedCell;
+
+  if (!clientId) {
+    state[c][r] = { clientId: '', status: 'PENDIENTE' };
+  } else {
+    state[c][r] = { clientId, status };
+  }
+
+  closeModal();
+  render();
+  init3DEffects();
+  setStatus('Posición actualizada correctamente.');
+}
+
+function removeCellFromModal() {
+  if (!selectedCell) return;
+
+  const { c, r } = selectedCell;
+
+  state[c][r] = { clientId: '', status: 'PENDIENTE' };
+
+  closeModal();
+  render();
+  init3DEffects();
+  setStatus('Posición liberada.');
+}
+
+function init3DEffects() {
+  document.querySelectorAll('.column').forEach(col => {
+    col.onmousemove = e => {
+      const rect = col.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const rotateX = 10 + ((rect.height / 2 - y) / rect.height) * 10;
+      const rotateY = -6 + ((x - rect.width / 2) / rect.width) * 12;
+
+      col.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
+    };
+
+    col.onmouseleave = () => {
+      col.style.transform = 'rotateX(10deg) rotateY(-6deg)';
     };
   });
-
-  let boardState = {};
-  let activeCell = null;
-
-  document.addEventListener("DOMContentLoaded", init);
-
-  function init() {
-    injectDynamicStyles();
-    ensureBoardContainer();
-    ensureModal();
-
-    boardState = loadBoard();
-
-    populateAllSelects();
-    renderLegend();
-    renderBoard();
-    bindEvents();
-
-    setStatus(`Tablero listo con ${getTotalSlots()} posiciones.`);
-  }
-
-  function getRowsByColumn(column) {
-    if (column >= 1 && column <= 6) return 12;
-    if (column === 7) return 7;
-    if (column === 8) return 12;
-    return 11;
-  }
-
-  function getTotalSlots() {
-    return COLUMNS.reduce((total, column) => total + column.rows, 0);
-  }
-
-  function getKey(column, row) {
-    return `${column}-${row}`;
-  }
-
-  function isValidPosition(column, row) {
-    const foundColumn = COLUMNS.find((item) => item.number === Number(column));
-    return Boolean(foundColumn && row >= 1 && row <= foundColumn.rows);
-  }
-
-  function cssClass(value) {
-    return String(value)
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-  }
-
-  function escapeHtml(value) {
-    return String(value ?? "")
-      .replace(/&/g, "&")
-      .replace(/</g, "<")
-      .replace(/>/g, ">")
-      .replace(/"/g, """)
-      .replace(/'/g, "&#039;");
-  }
-
-  function getInitials(client) {
-    return String(client)
-      .replace(/\./g, "")
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((word) => word[0])
-      .join("")
-      .slice(0, 3)
-      .toUpperCase();
-  }
-
-  function ensureBoardContainer() {
-    let layout = document.querySelector(".layout");
-
-    if (layout) return layout;
-
-    let scene = document.querySelector(".scene");
-
-    if (!scene) {
-      scene = document.createElement("div");
-      scene.className = "scene";
-
-      const shell = document.querySelector(".dashboard-shell") || document.body;
-      shell.appendChild(scene);
-    }
-
-    layout = document.createElement("div");
-    layout.className = "layout";
-    scene.appendChild(layout);
-
-    return layout;
-  }
-
-  function renderBoard() {
-    const layout = document.querySelector(".layout");
-    if (!layout) return;
-
-    layout.innerHTML = COLUMNS.map(renderColumn).join("");
-
-    updateMetrics();
-  }
-
-  function renderColumn(column) {
-    const occupied = countOccupiedByColumn(column.number);
-    const percent = Math.round((occupied / column.rows) * 100);
-
-    const cells = Array.from({ length: column.rows }, (_, index) => {
-      return renderCell(column.number, index + 1);
-    }).join("");
-
-    return `
-      <section class="column" data-column="${column.number}" data-type="${column.header}">
-        <div class="column-header">
-          <div class="column-top">
-            <div>
-              <div class="column-section">${column.header}</div>
-              <div class="column-number">Columna ${column.number}</div>
-            </div>
-
-            <div class="column-count">${column.rows} filas</div>
-          </div>
-
-          <div class="progress-track">
-            <div class="progress-fill" style="width: ${percent}%"></div>
-          </div>
-        </div>
-
-        ${cells}
-      </section>
-    `;
-  }
-
-  function renderCell(column, row) {
-    const data = boardState[getKey(column, row)];
-    const isFilled = Boolean(data);
-
-    const client = isFilled ? data.client : "Sin cliente";
-    const status = isFilled ? data.status : "VACÍO";
-    const statusClass = isFilled ? cssClass(status) : "empty";
-
-    return `
-      <div 
-        class="cell ${isFilled ? statusClass : "empty"}" 
-        data-column="${column}" 
-        data-row="${row}"
-        role="button"
-        tabindex="0"
-        aria-label="Columna ${column}, fila ${row}"
-      >
-        <div class="badge-row">
-          <span class="badge ${statusClass}">${escapeHtml(status)}</span>
-          <span class="slot-id">C${column}-F${row}</span>
-        </div>
-
-        <div class="logo-wrap">
-          ${
-            isFilled
-              ? `<div class="client-initials">${escapeHtml(getInitials(client))}</div>`
-              : `<span class="empty-text">Disponible</span>`
-          }
-        </div>
-
-        <div class="client-name">${escapeHtml(client)}</div>
-      </div>
-    `;
-  }
-
-  function countOccupiedByColumn(column) {
-    const columnConfig = COLUMNS.find((item) => item.number === Number(column));
-    if (!columnConfig) return 0;
-
-    let total = 0;
-
-    for (let row = 1; row <= columnConfig.rows; row++) {
-      if (boardState[getKey(column, row)]) total++;
-    }
-
-    return total;
-  }
-
-  function assignCell(column, row, client, status) {
-    column = Number(column);
-    row = Number(row);
-
-    if (!isValidPosition(column, row)) {
-      setStatus("Selecciona una columna y fila válidas.");
-      return;
-    }
-
-    if (!CLIENTES.includes(client)) {
-      setStatus("Selecciona un cliente válido.");
-      return;
-    }
-
-    if (!ESTADOS.includes(status)) {
-      setStatus("Selecciona un estado válido.");
-      return;
-    }
-
-    boardState[getKey(column, row)] = {
-      client,
-      status,
-      updatedAt: new Date().toISOString()
-    };
-
-    saveBoard();
-    renderBoard();
-
-    setStatus(`C${column}-F${row} actualizado: ${client} / ${status}.`);
-  }
-
-  function clearCell(column, row) {
-    column = Number(column);
-    row = Number(row);
-
-    if (!isValidPosition(column, row)) {
-      setStatus("Selecciona una posición válida para limpiar.");
-      return;
-    }
-
-    delete boardState[getKey(column, row)];
-
-    saveBoard();
-    renderBoard();
-
-    setStatus(`C${column}-F${row} quedó disponible.`);
-  }
-
-  function resetBoard() {
-    const confirmed = window.confirm(
-      "¿Deseas borrar todas las asignaciones del tablero?"
-    );
-
-    if (!confirmed) return;
-
-    boardState = {};
-    saveBoard();
-    renderBoard();
-
-    setStatus("Tablero reiniciado correctamente.");
-  }
-
-  function loadBoard() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return {};
-
-      const parsed = JSON.parse(raw);
-      const cleanState = {};
-
-      Object.entries(parsed).forEach(([key, value]) => {
-        const [column, row] = key.split("-").map(Number);
-        const client = value?.client || value?.cliente;
-        const status = value?.status || value?.estado;
-
-        if (
-          isValidPosition(column, row) &&
-          CLIENTES.includes(client) &&
-          ESTADOS.includes(status)
-        ) {
-          cleanState[getKey(column, row)] = {
-            client,
-            status,
-            updatedAt: value.updatedAt || null
-          };
-        }
-      });
-
-      return cleanState;
-    } catch {
-      return {};
-    }
-  }
-
-  function saveBoard() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(boardState));
-  }
-
-  function renderLegend() {
-    const legend = document.querySelector(".legend");
-    if (!legend) return;
-
-    legend.innerHTML = [
-      ...ESTADOS.map((estado) => {
-        const className = cssClass(estado);
-
-        return `
-          <div class="legend-item">
-            <span class="dot ${className}"></span>
-            ${estado}
-          </div>
-        `;
-      }),
-      `
-        <div class="legend-item">
-          <span class="dot empty"></span>
-          VACÍO
-        </div>
-      `
-    ].join("");
-  }
-
-  function updateMetrics() {
-    const total = getTotalSlots();
-    const occupied = Object.keys(boardState).length;
-    const empty = total - occupied;
-    const percent = total ? Math.round((occupied / total) * 100) : 0;
-
-    setMetricValue(["#metricTotal", "#totalSlots", "[data-metric='total']"], total, 0);
-    setMetricValue(["#metricOccupied", "#occupiedSlots", "[data-metric='occupied']"], occupied, 1);
-    setMetricValue(["#metricEmpty", "#emptySlots", "[data-metric='empty']"], empty, 2);
-    setMetricValue(["#metricPercent", "#completionPercent", "[data-metric='percent']"], `${percent}%`, 3);
-  }
-
-  function setMetricValue(selectors, value, fallbackIndex) {
-    for (const selector of selectors) {
-      const element = document.querySelector(selector);
-      if (element) {
-        element.textContent = value;
-        return;
-      }
-    }
-
-    const metricValues = document.querySelectorAll(".metric-value");
-
-    if (metricValues[fallbackIndex]) {
-      metricValues[fallbackIndex].textContent = value;
-    }
-  }
-
-  function populateAllSelects() {
-    const columnValues = COLUMNS.map((column) => String(column.number));
-
-    getAllSelects("client").forEach((select) => {
-      fillOptions(select, CLIENTES);
-    });
-
-    getAllSelects("status").forEach((select) => {
-      fillOptions(select, ESTADOS);
-    });
-
-    getAllSelects("column").forEach((select) => {
-      fillOptions(select, columnValues, {
-        label: (value) => `Columna ${value}`
-      });
-    });
-
-    updateAllRowSelects();
-  }
-
-  function updateAllRowSelects() {
-    getAllSelects("row").forEach((rowSelect) => {
-      const modal = rowSelect.closest(".modal");
-      const columnSelect = modal
-        ? modal.querySelector("#modalColumn")
-        : getMainSelect("column");
-
-      populateRowSelect(rowSelect, Number(columnSelect?.value || 1));
-    });
-  }
-
-  function populateRowSelect(rowSelect, column) {
-    if (!rowSelect) return;
-
-    const rows = getRowsByColumn(Number(column));
-    const rowValues = Array.from({ length: rows }, (_, index) => String(index + 1));
-
-    fillOptions(rowSelect, rowValues, {
-      label: (value) => `Fila ${value}`
-    });
-  }
-
-  function fillOptions(select, values, config = {}) {
-    if (!select) return;
-
-    const current = select.value;
-    const label = config.label || ((value) => value);
-
-    select.innerHTML = values
-      .map((value) => {
-        return `<option value="${escapeHtml(value)}">${escapeHtml(label(value))}</option>`;
-      })
-      .join("");
-
-    if (values.map(String).includes(String(current))) {
-      select.value = current;
-    } else if (values.length) {
-      select.value = values[0];
-    }
-  }
-
-  function getAllSelects(type) {
-    const selectors = getSelectorsByType(type);
-    const elements = [];
-
-    selectors.forEach((selector) => {
-      document.querySelectorAll(selector).forEach((element) => {
-        if (element instanceof HTMLSelectElement && !elements.includes(element)) {
-          elements.push(element);
-        }
-      });
-    });
-
-    document.querySelectorAll("label").forEach((label) => {
-      if (!labelMatchesType(label, type)) return;
-
-      let select = null;
-
-      if (label.htmlFor) {
-        select = document.getElementById(label.htmlFor);
-      }
-
-      if (!select) {
-        select = label.closest(".field")?.querySelector("select");
-      }
-
-      if (select instanceof HTMLSelectElement && !elements.includes(select)) {
-        elements.push(select);
-      }
-    });
-
-    return elements;
-  }
-
-  function getMainSelect(type) {
-    const selectors = getSelectorsByType(type);
-
-    for (const selector of selectors) {
-      const element = [...document.querySelectorAll(selector)].find((item) => {
-        return item instanceof HTMLSelectElement && !item.closest(".modal");
-      });
-
-      if (element) return element;
-    }
-
-    for (const label of document.querySelectorAll("label")) {
-      if (!labelMatchesType(label, type)) continue;
-
-      const select = label.htmlFor
-        ? document.getElementById(label.htmlFor)
-        : label.closest(".field")?.querySelector("select");
-
-      if (select instanceof HTMLSelectElement && !select.closest(".modal")) {
-        return select;
-      }
-    }
-
-    return null;
-  }
-
-  function getSelectorsByType(type) {
-    const selectors = {
-      client: [
-        "#cliente",
-        "#client",
-        "#clienteSelect",
-        "#clientSelect",
-        "#selectCliente",
-        "#modalClient",
-        "#modalCliente",
-        "select[name='cliente']",
-        "select[name='client']",
-        "select[data-field='cliente']",
-        "select[data-field='client']"
-      ],
-      status: [
-        "#estado",
-        "#status",
-        "#estadoSelect",
-        "#statusSelect",
-        "#selectEstado",
-        "#modalStatus",
-        "#modalEstado",
-        "select[name='estado']",
-        "select[name='status']",
-        "select[data-field='estado']",
-        "select[data-field='status']"
-      ],
-      column: [
-        "#columna",
-        "#column",
-        "#columnaSelect",
-        "#columnSelect",
-        "#selectColumna",
-        "#modalColumn",
-        "#modalColumna",
-        "select[name='columna']",
-        "select[name='column']",
-        "select[data-field='columna']",
-        "select[data-field='column']"
-      ],
-      row: [
-        "#fila",
-        "#row",
-        "#filaSelect",
-        "#rowSelect",
-        "#selectFila",
-        "#modalRow",
-        "#modalFila",
-        "select[name='fila']",
-        "select[name='row']",
-        "select[data-field='fila']",
-        "select[data-field='row']"
-      ]
-    };
-
-    return selectors[type] || [];
-  }
-
-  function labelMatchesType(label, type) {
-    const text = normalizeText(label.textContent);
-
-    const keywords = {
-      client: ["CLIENTE"],
-      status: ["ESTADO"],
-      column: ["COLUMNA"],
-      row: ["FILA"]
-    };
-
-    return keywords[type]?.some((keyword) => text.includes(keyword));
-  }
-
-  function normalizeText(value) {
-    return String(value || "")
-      .toUpperCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-  }
-
-  function bindEvents() {
-    const layout = document.querySelector(".layout");
-
-    if (layout) {
-      layout.addEventListener("click", (event) => {
-        const cell = event.target.closest(".cell");
-        if (!cell) return;
-
-        openCellModal(Number(cell.dataset.column), Number(cell.dataset.row));
-      });
-
-      layout.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter") return;
-
-        const cell = event.target.closest(".cell");
-        if (!cell) return;
-
-        openCellModal(Number(cell.dataset.column), Number(cell.dataset.row));
-      });
-    }
-
-    document.addEventListener("change", (event) => {
-      const target = event.target;
-
-      if (!(target instanceof HTMLSelectElement)) return;
-
-      if (isSelectType(target, "column")) {
-        const modal = target.closest(".modal");
-        const rowSelect = modal
-          ? modal.querySelector("#modalRow")
-          : getMainSelect("row");
-
-        populateRowSelect(rowSelect, Number(target.value));
-      }
-    });
-
-    const assignButton =
-      findButtonBySelectors([
-        "#assignBtn",
-        "#addBtn",
-        "#saveBtn",
-        "#btnAssign",
-        "#btnAdd",
-        "#btnGuardar"
-      ]) || findActionButton(["ASIGNAR", "AGREGAR", "GUARDAR"]);
-
-    if (assignButton) {
-      assignButton.addEventListener("click", handleMainAssign);
-    }
-
-    const clearButton =
-      findButtonBySelectors([
-        "#clearBtn",
-        "#clearCellBtn",
-        "#btnClear",
-        "#btnLimpiar"
-      ]) || findActionButton(["LIMPIAR", "ELIMINAR CELDA"]);
-
-    if (clearButton) {
-      clearButton.addEventListener("click", handleMainClear);
-    }
-
-    const resetButton =
-      findButtonBySelectors([
-        "#resetBtn",
-        "#clearAllBtn",
-        "#btnReset",
-        "#btnReiniciar"
-      ]) || findActionButton(["REINICIAR", "BORRAR TODO", "LIMPIAR TODO"]);
-
-    if (resetButton) {
-      resetButton.addEventListener("click", resetBoard);
-    }
-
-    document.querySelector("#modalSave")?.addEventListener("click", handleModalSave);
-    document.querySelector("#modalClear")?.addEventListener("click", handleModalClear);
-    document.querySelector("#modalCancel")?.addEventListener("click", closeCellModal);
-
-    document.querySelector("#cellModal")?.addEventListener("click", (event) => {
-      if (event.target.id === "cellModal") closeCellModal();
-    });
-
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeCellModal();
-    });
-  }
-
-  function isSelectType(select, type) {
-    const selectors = getSelectorsByType(type);
-
-    if (selectors.some((selector) => select.matches(selector))) return true;
-
-    const label = select.id
-      ? document.querySelector(`label[for="${select.id}"]`)
-      : select.closest(".field")?.querySelector("label");
-
-    return label ? labelMatchesType(label, type) : false;
-  }
-
-  function findButtonBySelectors(selectors) {
-    for (const selector of selectors) {
-      const button = [...document.querySelectorAll(selector)].find((item) => {
-        return item instanceof HTMLButtonElement && !item.closest(".modal");
-      });
-
-      if (button) return button;
-    }
-
-    return null;
-  }
-
-  function findActionButton(texts) {
-    const normalizedTexts = texts.map(normalizeText);
-    const scopes = [
-      document.querySelector(".actions"),
-      document
-    ].filter(Boolean);
-
-    for (const scope of scopes) {
-      const button = [...scope.querySelectorAll("button")].find((item) => {
-        if (item.closest(".modal")) return false;
-
-        const buttonText = normalizeText(item.textContent);
-
-        return normalizedTexts.some((text) => buttonText.includes(text));
-      });
-
-      if (button) return button;
-    }
-
-    return null;
-  }
-
-  function handleMainAssign() {
-    const column = getMainSelect("column")?.value;
-    const row = getMainSelect("row")?.value;
-    const client = getMainSelect("client")?.value;
-    const status = getMainSelect("status")?.value;
-
-    assignCell(column, row, client, status);
-  }
-
-  function handleMainClear() {
-    const column = getMainSelect("column")?.value;
-    const row = getMainSelect("row")?.value;
-
-    clearCell(column, row);
-  }
-
-  function ensureModal() {
-    let backdrop = document.querySelector("#cellModal");
-
-    if (!backdrop) {
-      backdrop = document.querySelector(".modal-backdrop");
-    }
-
-    if (!backdrop) {
-      backdrop = document.createElement("div");
-      document.body.appendChild(backdrop);
-    }
-
-    backdrop.id = "cellModal";
-    backdrop.className = "modal-backdrop";
-
-    backdrop.innerHTML = `
-      <div class="modal">
-        <div class="modal-header">
-          <h3>Editar posición</h3>
-          <p id="modalPosition">Selecciona cliente y estado.</p>
-        </div>
-
-        <div class="modal-body">
-          <div class="field">
-            <label for="modalColumn">Columna</label>
-            <select id="modalColumn"></select>
-          </div>
-
-          <div class="field">
-            <label for="modalRow">Fila</label>
-            <select id="modalRow"></select>
-          </div>
-
-          <div class="field">
-            <label for="modalClient">Cliente</label>
-            <select id="modalClient"></select>
-          </div>
-
-          <div class="field">
-            <label for="modalStatus">Estado</label>
-            <select id="modalStatus"></select>
-          </div>
-        </div>
-
-        <div class="modal-actions">
-          <button type="button" class="danger-btn" id="modalClear">Limpiar</button>
-          <button type="button" class="btn-secondary" id="modalCancel">Cancelar</button>
-          <button type="button" class="btn-primary" id="modalSave">Guardar</button>
-        </div>
-      </div>
-    `;
-  }
-
-  function openCellModal(column, row) {
-    if (!isValidPosition(column, row)) return;
-
-    activeCell = { column, row };
-
-    populateAllSelects();
-
-    const data = boardState[getKey(column, row)];
-
-    const columnSelect = document.querySelector("#modalColumn");
-    const rowSelect = document.querySelector("#modalRow");
-    const clientSelect = document.querySelector("#modalClient");
-    const statusSelect = document.querySelector("#modalStatus");
-    const positionText = document.querySelector("#modalPosition");
-
-    columnSelect.value = String(column);
-    populateRowSelect(rowSelect, column);
-    rowSelect.value = String(row);
-
-    clientSelect.value = data?.client || CLIENTES[0];
-    statusSelect.value = data?.status || ESTADOS[0];
-
-    if (positionText) {
-      positionText.textContent = `Posición C${column}-F${row}`;
-    }
-
-    document.querySelector("#cellModal")?.classList.add("show");
-  }
-
-  function closeCellModal() {
-    document.querySelector("#cellModal")?.classList.remove("show");
-    activeCell = null;
-  }
-
-  function handleModalSave() {
-    const column = document.querySelector("#modalColumn")?.value;
-    const row = document.querySelector("#modalRow")?.value;
-    const client = document.querySelector("#modalClient")?.value;
-    const status = document.querySelector("#modalStatus")?.value;
-
-    assignCell(column, row, client, status);
-    closeCellModal();
-  }
-
-  function handleModalClear() {
-    const column = document.querySelector("#modalColumn")?.value || activeCell?.column;
-    const row = document.querySelector("#modalRow")?.value || activeCell?.row;
-
-    clearCell(column, row);
-    closeCellModal();
-  }
-
-  function setStatus(message) {
-    const line = document.querySelector("#statusLine, .status-line");
-    if (!line) return;
-
-    const now = new Intl.DateTimeFormat("es-PE", {
-      dateStyle: "short",
-      timeStyle: "short"
-    }).format(new Date());
-
-    line.textContent = `${message} Última actualización: ${now}`;
-  }
-
-  function injectDynamicStyles() {
-    if (document.querySelector("#dynamic-board-styles")) return;
-
-    const style = document.createElement("style");
-    style.id = "dynamic-board-styles";
-
-    style.textContent = `
-      .layout {
-  display: grid !important;
-  grid-template-columns: repeat(14, minmax(185px, 1fr)) !important;
-  gap: 14px !important;
-  min-width: 2800px !important;
 }
 
-@media (min-width: 1600px) {
-  .layout {
-    grid-template-columns: repeat(14, minmax(210px, 1fr)) !important;
-    min-width: 3080px !important;
+function saveLayout() {
+  if (hasAppsScript()) {
+    google.script.run.withSuccessHandler(() => {
+      const now = new Date().toLocaleString('es-PE');
+      document.getElementById('lastSaved').textContent = `Último guardado: ${now}`;
+      setStatus('Layout guardado correctamente.');
+    }).saveLayoutData(state);
+
+    return;
   }
+
+  localStorage.setItem('layoutData', JSON.stringify(state));
+
+  const now = new Date().toLocaleString('es-PE');
+  document.getElementById('lastSaved').textContent = `Último guardado local: ${now}`;
+  setStatus('Layout guardado correctamente en el navegador.');
 }
 
-      .column-section {
-        margin-bottom: 4px;
-        font-size: 13px;
-        font-weight: 950;
-        letter-spacing: .7px;
-        color: #dbeafe;
-        text-transform: uppercase;
-      }
+function resetLayout() {
+  const ok = confirm('¿Deseas limpiar todo el layout?');
 
-      .column[data-type="ARMADO"] .column-header {
-        background: linear-gradient(180deg, #f59e0b, #b45309);
-      }
+  if (!ok) return;
 
-      .column[data-type="DESPACHO"] .column-header {
-        background: linear-gradient(180deg, #3b82f6, #1d4ed8);
-      }
+  state = buildEmptyState();
 
-      .client-initials {
-        width: 70px;
-        height: 46px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 16px;
-        background: linear-gradient(145deg, rgba(59,130,246,.95), rgba(29,78,216,.95));
-        color: #ffffff;
-        font-size: 18px;
-        font-weight: 950;
-        letter-spacing: .6px;
-        box-shadow: 0 10px 22px rgba(37,99,235,.36);
-      }
+  render();
+  init3DEffects();
+  setStatus('Layout reiniciado.');
+}
 
-      .cell.armado {
-        box-shadow: inset 0 0 0 1px rgba(245,158,11,.32), 0 12px 22px rgba(0,0,0,.25);
-      }
+function setStatus(text) {
+  document.getElementById('status').textContent = text;
 
-      .cell.etiquetado {
-        box-shadow: inset 0 0 0 1px rgba(59,130,246,.32), 0 12px 22px rgba(0,0,0,.25);
-      }
+  setTimeout(() => {
+    document.getElementById('status').textContent = '';
+  }, 3200);
+}
 
-      .cell.auditoria {
-        box-shadow: inset 0 0 0 1px rgba(168,85,247,.32), 0 12px 22px rgba(0,0,0,.25);
-      }
+function renderLeaders() {
+  const container = document.getElementById('leaders');
 
-      .cell.realizado {
-        box-shadow: inset 0 0 0 1px rgba(16,185,129,.32), 0 12px 22px rgba(0,0,0,.25);
-      }
+  if (!container || !config.leaders) return;
 
-      .badge.armado,
-      .dot.armado {
-        background: rgba(245,158,11,.22);
-        color: #fde68a;
-      }
+  container.innerHTML = config.leaders.map((person, i) => `
+    <div class="leader-card">
+      <div class="leader-photo-wrap">
+        <img class="leader-photo" src="${person.photo}" alt="${person.name}">
+      </div>
 
-      .badge.etiquetado,
-      .dot.etiquetado {
-        background: rgba(59,130,246,.22);
-        color: #bfdbfe;
-      }
+      <div class="leader-info">
+        <div class="leader-name">${person.name}</div>
+        <div class="leader-tag">RESPONSABLE ${String(i + 1).padStart(2, '0')}</div>
+      </div>
+    </div>
+  `).join('');
+}
 
-      .badge.auditoria,
-      .dot.auditoria {
-        background: rgba(168,85,247,.22);
-        color: #e9d5ff;
-      }
-
-      .badge.realizado,
-      .dot.realizado {
-        background: rgba(16,185,129,.22);
-        color: #a7f3d0;
-      }
-
-      .dot.armado {
-        background: #f59e0b;
-      }
-
-      .dot.etiquetado {
-        background: #3b82f6;
-      }
-
-      .dot.auditoria {
-        background: #a855f7;
-      }
-
-      .dot.realizado {
-        background: #10b981;
-      }
-
-      .dot.empty {
-        background: #64748b;
-      }
-    `;
-
-    document.head.appendChild(style);
-  }
-
-  window.TableroDespacho = {
-    CLIENTES,
-    ESTADOS,
-    COLUMNS,
-    assignCell,
-    clearCell,
-    resetBoard,
-    renderBoard,
-    getState: () => ({ ...boardState })
-  };
-})();
+loadApp();
