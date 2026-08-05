@@ -1,113 +1,191 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <base target="_top">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Layout Outbound Retail</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard de Posiciones</title>
+
+  <link rel="stylesheet" href="styles.css" />
   <script src="app.js" defer></script>
 </head>
+
 <body>
-  <div class="page-header">
+  <header class="page-header">
     <div class="title-block">
-      <h1>Layout Outbound Retail</h1>
-      <p>Reporte de despachos Outbound Retail.</p>
-      <div class="last-saved" id="lastSaved"></div>
+      <h1>Dashboard de Posiciones</h1>
+      <p>Gestión visual de columnas, filas, estados, clientes y logotipos.</p>
     </div>
 
     <aside class="responsible-team" aria-label="Equipo responsable">
       <div class="responsible-label">Equipo responsable</div>
+
       <div class="responsible-list">
         <div class="responsible-member">
-          <span class="responsible-avatar">JF</span>
-          <div><strong>Jaime Flores</strong><small>Líder Outbound Retail</small></div>
+          <span class="responsible-avatar">OP</span>
+          <div>
+            <strong>Operaciones</strong>
+            <small>Control del tablero</small>
+          </div>
         </div>
+
         <div class="responsible-member">
-          <span class="responsible-avatar">WV</span>
-          <div><strong>William Valdivia</strong><small>Responsable 1</small></div>
-        </div>
-        <div class="responsible-member">
-          <span class="responsible-avatar">MB</span>
-          <div><strong>Miguel Bustamante</strong><small>Responsable 2</small></div>
-        </div>
-        <div class="responsible-member">
-          <span class="responsible-avatar">JL</span>
-          <div><strong>Johan Luyo</strong><small>Responsable 3</small></div>
+          <span class="responsible-avatar">QA</span>
+          <div>
+            <strong>Calidad</strong>
+            <small>Validación de estados</small>
+          </div>
         </div>
       </div>
     </aside>
-  </div>
 
-  <div id="leaders" class="leaders-grid"></div>
-
-  <div class="dashboard-shell">
-    <div class="controls-grid">
-      <div class="field">
-        <label>CLIENTE</label>
-        <select id="clientSelect"></select>
-      </div>
-      <div class="field">
-        <label>ESTADO</label>
-        <select id="statusSelect"></select>
-      </div>
-      <div class="field">
-        <label>COLUMNA</label>
-        <select id="columnSelect"></select>
-      </div>
-      <div class="field">
-        <label>MODO</label>
-        <div class="checkbox-field">
-          <input type="checkbox" id="fullColumnMode">
-          <span>Aplicar a toda la columna</span>
-        </div>
-      </div>
-      <div class="field">
-        <label>ACCIÓN</label>
-        <button class="btn-primary" onclick="assignClient()">Asignar</button>
-      </div>
+    <div class="header-stamp">
+      <strong>Vista general</strong><br />
+      14 columnas configuradas<br />
+      Actualización local automática
     </div>
+  </header>
+
+  <section class="leaders-panel">
+    <div class="leaders-panel-header">
+      <h2>Panel de Control</h2>
+      <p>Selecciona una celda del tablero para actualizar su información.</p>
+    </div>
+  </section>
+
+  <main class="dashboard-shell">
+    <section class="metrics" aria-label="Métricas del tablero">
+      <article class="metric-card">
+        <div class="metric-label">Total</div>
+        <div class="metric-value" id="totalSlots" data-metric="total">0</div>
+        <div class="metric-sub">Posiciones disponibles</div>
+      </article>
+
+      <article class="metric-card">
+        <div class="metric-label">Ocupadas</div>
+        <div class="metric-value" id="occupiedSlots" data-metric="occupied">0</div>
+        <div class="metric-sub">Celdas con estado activo</div>
+      </article>
+
+      <article class="metric-card">
+        <div class="metric-label">Disponibles</div>
+        <div class="metric-value" id="emptySlots" data-metric="empty">0</div>
+        <div class="metric-sub">Celdas vacías</div>
+      </article>
+
+      <article class="metric-card">
+        <div class="metric-label">Pendientes</div>
+        <div class="metric-value" id="pendingCount" data-metric="pending">0</div>
+        <div class="metric-sub">Elementos por procesar</div>
+      </article>
+
+      <article class="metric-card">
+        <div class="metric-label">En proceso</div>
+        <div class="metric-value" id="progressCount" data-metric="progress">0</div>
+        <div class="metric-sub">Elementos activos</div>
+      </article>
+
+      <article class="metric-card">
+        <div class="metric-label">Enviados</div>
+        <div class="metric-value" id="shippedCount" data-metric="shipped">0</div>
+        <div class="metric-sub">Elementos completados</div>
+      </article>
+    </section>
+
+    <section class="legend" aria-label="Leyenda de estados">
+      <div class="legend-item">
+        <span class="dot" style="background:#64748b;"></span>
+        Vacío
+      </div>
+
+      <div class="legend-item">
+        <span class="dot" style="background:#f59e0b;"></span>
+        Pendiente
+      </div>
+
+      <div class="legend-item">
+        <span class="dot" style="background:#3b82f6;"></span>
+        En proceso
+      </div>
+
+      <div class="legend-item">
+        <span class="dot" style="background:#10b981;"></span>
+        Enviado
+      </div>
+    </section>
 
     <div class="actions">
-      <button class="btn-secondary" onclick="saveLayout()">Guardar</button>
-      <button class="btn-secondary" onclick="resetLayout()">Limpiar todo</button>
+      <button type="button" class="danger-btn" id="resetBtn">
+        Reiniciar tablero
+      </button>
     </div>
 
-    <div class="status-line" id="status"></div>
-    <div class="metrics" id="metrics"></div>
+    <p class="status-line" id="statusLine">
+      Cargando tablero...
+    </p>
 
-    <div class="legend">
-      <div class="legend-item"><span class="dot" style="background:#f59e0b"></span>PENDIENTE</div>
-      <div class="legend-item"><span class="dot" style="background:#3b82f6"></span>EN PROGRESO</div>
-      <div class="legend-item"><span class="dot" style="background:#10b981"></span>DESPACHADO</div>
-      <div class="legend-item"><span class="dot" style="background:#64748b"></span>DISPONIBLE</div>
-    </div>
+    <section class="scene" aria-label="Tablero principal">
+      <div class="layout" id="dashboardBoard"></div>
+    </section>
+  </main>
 
-    <div class="scene">
-      <div id="layout" class="layout"></div>
-    </div>
-  </div>
-
-  <div class="modal-backdrop" id="modalBackdrop" onclick="backdropClose(event)">
+  <div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal">
       <div class="modal-header">
-        <h3>Editar posición</h3>
-        <p id="modalPosition"></p>
+        <h3 id="modalTitle">Editar celda</h3>
+        <p>Actualiza la columna, fila, estado, cliente y logo.</p>
       </div>
+
       <div class="modal-body">
         <div class="field">
-          <label>CLIENTE</label>
-          <select id="modalClientSelect"></select>
+          <label for="columnSelect">Columna</label>
+          <select id="columnSelect" name="column"></select>
         </div>
+
         <div class="field">
-          <label>ESTADO</label>
-          <select id="modalStatusSelect"></select>
+          <label for="rowSelect">Fila</label>
+          <select id="rowSelect" name="row"></select>
+        </div>
+
+        <div class="field">
+          <label for="statusSelect">Estado</label>
+          <select id="statusSelect" name="status"></select>
+        </div>
+
+        <div class="field">
+          <label for="clientName">Cliente / Nombre</label>
+          <input
+            type="text"
+            id="clientName"
+            name="clientName"
+            placeholder="Ejemplo: Cliente A"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="field">
+          <label for="logoUrl">Logo</label>
+          <input
+            type="text"
+            id="logoUrl"
+            name="logoUrl"
+            placeholder="Ruta o URL del logo"
+            autocomplete="off"
+          />
         </div>
       </div>
+
       <div class="modal-actions">
-        <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
-        <button class="btn-secondary danger-btn" onclick="removeCellFromModal()">Eliminar</button>
-        <button class="btn-primary" onclick="saveCellFromModal()">Guardar cambios</button>
+        <button type="button" class="btn-secondary" id="modalCloseBtn">
+          Cancelar
+        </button>
+
+        <button type="button" class="danger-btn" id="clearBtn">
+          Limpiar
+        </button>
+
+        <button type="button" class="btn-primary" id="saveBtn">
+          Guardar
+        </button>
       </div>
     </div>
   </div>
