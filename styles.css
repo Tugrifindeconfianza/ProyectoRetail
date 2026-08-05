@@ -831,3 +831,46 @@ button:hover {
     width: 100%;
   }
 }
+/* ARMADO = ROJO */
+.badge.armado,
+.legend-dot.armado {
+  background: #ef4444;
+}
+
+.cell.armado {
+  border-color: rgba(239, 68, 68, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.35), 0 12px 22px rgba(0,0,0,.25);
+}
+
+/* ETIQUETADO = NARANJA */
+.badge.etiquetado,
+.legend-dot.etiquetado {
+  background: #f97316;
+}
+
+.cell.etiquetado {
+  border-color: rgba(249, 115, 22, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(249, 115, 22, 0.35), 0 12px 22px rgba(0,0,0,.25);
+}
+
+/* AUDITORIA = AMARILLO */
+.badge.auditoria,
+.legend-dot.auditoria {
+  background: #eab308;
+}
+
+.cell.auditoria {
+  border-color: rgba(234, 179, 8, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(234, 179, 8, 0.35), 0 12px 22px rgba(0,0,0,.25);
+}
+
+/* REALIZADO = VERDE */
+.badge.realizado,
+.legend-dot.realizado {
+  background: #22c55e;
+}
+
+.cell.realizado {
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.35), 0 12px 22px rgba(0,0,0,.25);
+}
