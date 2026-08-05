@@ -831,3 +831,12 @@ button:hover {
     width: 100%;
   }
 }
+.scene {
+  margin-top: 28px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+.column {
+  min-height: auto !important;
+}
