@@ -33,14 +33,8 @@ const makePhoto = (text) => {
 };
 
 const fallbackConfig = {
-const TOTAL_COLUMNS = 14;
-function getRowsForColumn(columnNumber) {
-  if (columnNumber >= 1 && columnNumber <= 6) return 12;
-  if (columnNumber === 7) return 7;
-  if (columnNumber === 8) return 12;
-  if (columnNumber >= 9 && columnNumber <= 14) return 11;
-  return 0;
-}
+  columns: 7,
+  rows: 5,
   statusOptions: ['PENDIENTE', 'EN PROGRESO', 'DESPACHADO'],
   clients: [
     { id: 'cliente-1', name: 'Cliente 1', logo: makeLogo('Cliente 1') },
