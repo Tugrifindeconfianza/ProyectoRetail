@@ -156,9 +156,9 @@ function fillSelectors() {
 
   document.getElementById('columnSelect').innerHTML =
     Array.from({ length: config.columns }, (_, i) => {
-      const n = String(i + 1).padStart(2, '0');
-      return `<option value="${i}">Columna ${n}</option>`;
+      return `<option value="${i}">C${i + 1}</option>`;
     }).join('');
+
 
   document.getElementById('statusSelect').innerHTML =
     config.statusOptions.map(s => `<option value="${s}">${s}</option>`).join('');
@@ -286,7 +286,7 @@ function render() {
   <div class="column-top">
     <div>
       <div class="column-stage">${getColumnHeader(c)}</div>
-      <div class="column-number">Columna ${String(c + 1).padStart(2, '0')}</div>
+      <div class="column-number">C${c + 1}</div>
     </div>
 
     <div class="column-count">${used}/${rowCount}</div>
@@ -352,7 +352,7 @@ function openModal(c, r) {
   const cell = state[c][r];
 
   document.getElementById('modalPosition').textContent =
-    `Columna ${String(c + 1).padStart(2, '0')} · Posición ${String(r + 1).padStart(2, '0')}`;
+    `C${c + 1} · Posición ${String(r + 1).padStart(2, '0')}`;
 
   document.getElementById('modalClientSelect').value = cell.clientId || '';
   document.getElementById('modalStatusSelect').value = cell.status || getDefaultStatus();
