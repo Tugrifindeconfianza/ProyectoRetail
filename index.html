@@ -8,57 +8,38 @@
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
 </head>
-
 <body>
   <div class="page-header">
     <div class="title-block">
       <h1>Layout Outbound Retail</h1>
       <p>Reporte de despachos Outbound Retail.</p>
+      <div class="last-saved" id="lastSaved"></div>
     </div>
 
     <aside class="responsible-team" aria-label="Equipo responsable">
-  <div class="responsible-label">Equipo responsable</div>
-
-<div class="responsible-list">
-  <div class="responsible-member">
-    <span class="responsible-avatar">MR</span>
-    <div>
-      <strong>Jaime Flores</strong>
-      <small>Lider Outbound Retail</small>
-    </div>
+      <div class="responsible-label">Equipo responsable</div>
+      <div class="responsible-list">
+        <div class="responsible-member">
+          <span class="responsible-avatar">JF</span>
+          <div><strong>Jaime Flores</strong><small>Líder Outbound Retail</small></div>
+        </div>
+        <div class="responsible-member">
+          <span class="responsible-avatar">WV</span>
+          <div><strong>William Valdivia</strong><small>Responsable 1</small></div>
+        </div>
+        <div class="responsible-member">
+          <span class="responsible-avatar">MB</span>
+          <div><strong>Miguel Bustamante</strong><small>Responsable 2</small></div>
+        </div>
+        <div class="responsible-member">
+          <span class="responsible-avatar">JL</span>
+          <div><strong>Johan Luyo</strong><small>Responsable 3</small></div>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <div class="responsible-member">
-    <span class="responsible-avatar">JD</span>
-    <div>
-      <strong>William Valdivia</strong>
-      <small>Responsable 1</small>
-    </div>
-  </div>
-
-  <div class="responsible-member">
-    <span class="responsible-avatar">JD</span>
-    <div>
-      <strong>Miguel Bustamante</strong>
-      <small>Responsable 2</small>
-    </div>
-  </div>
-
-  <div class="responsible-member">
-    <span class="responsible-avatar">JD</span>
-    <div>
-      <strong>Johan Luyo</strong>
-      <small>Responsable 3</small>
-    </div>
-  </div>
-</div>
-
-  </div>
-</aside>
-  </div>
-
-    <div id="leaders" class="leaders-grid"></div>
-  </div>
+  <div id="leaders" class="leaders-grid"></div>
 
   <div class="dashboard-shell">
     <div class="controls-grid">
@@ -66,17 +47,14 @@
         <label>CLIENTE</label>
         <select id="clientSelect"></select>
       </div>
-
       <div class="field">
         <label>ESTADO</label>
         <select id="statusSelect"></select>
       </div>
-
       <div class="field">
         <label>COLUMNA</label>
         <select id="columnSelect"></select>
       </div>
-
       <div class="field">
         <label>MODO</label>
         <div class="checkbox-field">
@@ -84,7 +62,6 @@
           <span>Aplicar a toda la columna</span>
         </div>
       </div>
-
       <div class="field">
         <label>ACCIÓN</label>
         <button class="btn-primary" onclick="assignClient()">Asignar</button>
@@ -97,7 +74,6 @@
     </div>
 
     <div class="status-line" id="status"></div>
-
     <div class="metrics" id="metrics"></div>
 
     <div class="legend">
@@ -118,19 +94,16 @@
         <h3>Editar posición</h3>
         <p id="modalPosition"></p>
       </div>
-
       <div class="modal-body">
         <div class="field">
           <label>CLIENTE</label>
           <select id="modalClientSelect"></select>
         </div>
-
         <div class="field">
           <label>ESTADO</label>
           <select id="modalStatusSelect"></select>
         </div>
       </div>
-
       <div class="modal-actions">
         <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
         <button class="btn-secondary danger-btn" onclick="removeCellFromModal()">Eliminar</button>
