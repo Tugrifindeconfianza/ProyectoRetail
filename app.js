@@ -2,19 +2,6 @@ let config = {};
 let state = [];
 let selectedCell = null;
 
-/* ---- Filas variables por columna (0-indexed) ----
-   Col 1-6 = 12 filas | Col 7 = 7 | Col 8 = 12 | Col 9-14 = 11 */
-const COLUMN_ROWS = [12, 12, 12, 12, 12, 12, 7, 12, 11, 11, 11, 11, 11, 11];
-
-function rowsForColumn(c) {
-  return COLUMN_ROWS[c] ?? (config.rows || 12);
-}
-function totalPositions() {
-  let t = 0;
-  for (let c = 0; c < config.columns; c++) t += rowsForColumn(c);
-  return t;
-}
-
 const makeLogo = (text) => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="260" height="90">
@@ -25,42 +12,47 @@ const makeLogo = (text) => {
       </text>
     </svg>
   `;
+
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
 const makePhoto = (text) => {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="400" height="500">
-      <rect width="100%" height="100%" fill="#021D49"/>
-      <circle cx="200" cy="170" r="80" fill="#FF0000"/>
-      <rect x="95" y="285" width="210" height="130" rx="65" fill="#032566"/>
+      <rect width="100%" height="100%" fill="#1e293b"/>
+      <circle cx="200" cy="170" r="80" fill="#3b82f6"/>
+      <rect x="95" y="285" width="210" height="130" rx="65" fill="#334155"/>
       <text x="50%" y="88%" dominant-baseline="middle" text-anchor="middle"
         font-family="Arial" font-size="28" font-weight="800" fill="#f8fafc">
         ${text}
       </text>
     </svg>
   `;
+
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
 const fallbackConfig = {
-  columns: 14,
-  rows: 12,
+const TOTAL_COLUMNS = 14;
+function getRowsForColumn(columnNumber) {
+  if (columnNumber >= 1 && columnNumber <= 6) return 12;
+  if (columnNumber === 7) return 7;
+  if (columnNumber === 8) return 12;
+  if (columnNumber >= 9 && columnNumber <= 14) return 11;
+  return 0;
+}
   statusOptions: ['PENDIENTE', 'EN PROGRESO', 'DESPACHADO'],
   clients: [
     { id: 'cliente-1', name: 'Cliente 1', logo: makeLogo('Cliente 1') },
     { id: 'cliente-2', name: 'Cliente 2', logo: makeLogo('Cliente 2') },
     { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('Cliente 3') }
   ],
-  leaders: [
-    { name: 'Responsable 1', photo: makePhoto('R1') },
-    { name: 'Responsable 2', photo: makePhoto('R2') },
-    { name: 'Responsable 3', photo: makePhoto('R3') }
-  ]
 };
 
 function hasAppsScript() {
-  return typeof google !== 'undefined' && google.script && google.script.run;
+  return typeof google !== 'undefined' &&
+    google.script &&
+    google.script.run;
 }
 
 function normalizeConfig(cfg = {}) {
@@ -74,8 +66,8 @@ function normalizeConfig(cfg = {}) {
 }
 
 function buildEmptyState() {
-  return Array.from({ length: config.columns }, (_, c) =>
-    Array.from({ length: rowsForColumn(c) }, () => ({
+  return Array.from({ length: config.columns }, () =>
+    Array.from({ length: config.rows }, () => ({
       clientId: '',
       status: 'PENDIENTE'
     }))
@@ -91,8 +83,10 @@ function normalizeState(saved) {
 
   return Array.from({ length: config.columns }, (_, c) => {
     const col = Array.isArray(saved[c]) ? saved[c] : [];
-    return Array.from({ length: rowsForColumn(c) }, (_, r) => {
+
+    return Array.from({ length: config.rows }, (_, r) => {
       const cell = col[r] || {};
+
       return {
         clientId: cell.clientId || '',
         status: config.statusOptions.includes(cell.status) ? cell.status : 'PENDIENTE'
@@ -119,10 +113,12 @@ function loadApp() {
   }
 
   config = normalizeConfig();
+
   fillSelectors();
   renderLeaders();
 
   let saved = null;
+
   try {
     saved = JSON.parse(localStorage.getItem('layoutData'));
   } catch (error) {
@@ -182,8 +178,7 @@ function assignClient() {
       if (!ok) return;
     }
 
-    const rows = rowsForColumn(colIndex);
-    for (let r = 0; r < rows; r++) {
+    for (let r = 0; r < config.rows; r++) {
       state[colIndex][r] = { clientId, status };
     }
 
@@ -217,7 +212,7 @@ function statusClass(status) {
 }
 
 function renderMetrics() {
-  const total = totalPositions();
+  const total = config.rows * config.columns;
   const occupied = state.flat().filter(c => c.clientId).length;
   const available = total - occupied;
   const shipped = state.flat().filter(c => c.clientId && c.status === 'DESPACHADO').length;
@@ -232,7 +227,7 @@ function renderMetrics() {
     <div class="metric-card">
       <div class="metric-label">OCUPADAS</div>
       <div class="metric-value">${occupied}</div>
-      <div class="metric-sub">${total ? Math.round((occupied / total) * 100) : 0}% de ocupación</div>
+      <div class="metric-sub">${Math.round((occupied / total) * 100)}% de ocupación</div>
     </div>
 
     <div class="metric-card">
@@ -256,11 +251,204 @@ function render() {
   container.innerHTML = '';
 
   for (let c = 0; c < config.columns; c++) {
-    const rows = rowsForColumn(c);
     const used = state[c].filter(cell => cell.clientId).length;
-    const progress = rows ? Math.round((used / rows) * 100) : 0;
+    const progress = Math.round((used / config.rows) * 100);
 
     const col = document.createElement('div');
     col.className = 'column';
 
-    const
+    const header = document.createElement('div');
+    header.className = 'column-header';
+    header.innerHTML = `
+      <div class="column-top">
+        <div class="column-number">${String(c + 1).padStart(2, '0')}</div>
+        <div class="column-count">${used}/${config.rows}</div>
+      </div>
+
+      <div class="progress-track">
+        <div class="progress-fill" style="width:${progress}%"></div>
+      </div>
+    `;
+
+    col.appendChild(header);
+
+    for (let r = 0; r < config.rows; r++) {
+      const cellData = state[c][r];
+      const cell = document.createElement('div');
+      const cellStatusClass = cellData.clientId ? statusClass(cellData.status) : 'empty';
+
+      cell.className = `cell ${cellData.clientId ? '' : 'empty'} ${cellStatusClass}`;
+
+      if (cellData.clientId) {
+        const client = getClientById(cellData.clientId) || {
+          name: 'Cliente no encontrado',
+          logo: makeLogo('N/A')
+        };
+
+        cell.innerHTML = `
+          <div class="badge-row">
+            <span class="badge ${statusClass(cellData.status)}">${cellData.status}</span>
+            <span class="slot-id">${String(r + 1).padStart(2, '0')}</span>
+          </div>
+
+          <div class="logo-wrap">
+            <img class="logo" src="${client.logo}" alt="${client.name}">
+          </div>
+
+          <div class="client-name">${client.name}</div>
+        `;
+      } else {
+        cell.innerHTML = `
+          <div class="badge-row">
+            <span class="badge empty">DISPONIBLE</span>
+            <span class="slot-id">${String(r + 1).padStart(2, '0')}</span>
+          </div>
+
+          <div class="logo-wrap">
+            <div class="empty-text">Sin asignación</div>
+          </div>
+
+          <div class="client-name" style="color:#64748b">-</div>
+        `;
+      }
+
+      cell.onclick = () => openModal(c, r);
+      col.appendChild(cell);
+    }
+
+    container.appendChild(col);
+  }
+}
+
+function openModal(c, r) {
+  selectedCell = { c, r };
+  const cell = state[c][r];
+
+  document.getElementById('modalPosition').textContent =
+    `Columna ${String(c + 1).padStart(2, '0')} · Posición ${String(r + 1).padStart(2, '0')}`;
+
+  document.getElementById('modalClientSelect').value = cell.clientId || '';
+  document.getElementById('modalStatusSelect').value = cell.status || 'PENDIENTE';
+  document.getElementById('modalBackdrop').classList.add('show');
+}
+
+function closeModal() {
+  selectedCell = null;
+  document.getElementById('modalBackdrop').classList.remove('show');
+}
+
+function backdropClose(event) {
+  if (event.target.id === 'modalBackdrop') {
+    closeModal();
+  }
+}
+
+function saveCellFromModal() {
+  if (!selectedCell) return;
+
+  const clientId = document.getElementById('modalClientSelect').value;
+  const status = document.getElementById('modalStatusSelect').value;
+  const { c, r } = selectedCell;
+
+  if (!clientId) {
+    state[c][r] = { clientId: '', status: 'PENDIENTE' };
+  } else {
+    state[c][r] = { clientId, status };
+  }
+
+  closeModal();
+  render();
+  init3DEffects();
+  setStatus('Posición actualizada correctamente.');
+}
+
+function removeCellFromModal() {
+  if (!selectedCell) return;
+
+  const { c, r } = selectedCell;
+
+  state[c][r] = { clientId: '', status: 'PENDIENTE' };
+
+  closeModal();
+  render();
+  init3DEffects();
+  setStatus('Posición liberada.');
+}
+
+function init3DEffects() {
+  document.querySelectorAll('.column').forEach(col => {
+    col.onmousemove = e => {
+      const rect = col.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const rotateX = 10 + ((rect.height / 2 - y) / rect.height) * 10;
+      const rotateY = -6 + ((x - rect.width / 2) / rect.width) * 12;
+
+      col.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-2px)`;
+    };
+
+    col.onmouseleave = () => {
+      col.style.transform = 'rotateX(10deg) rotateY(-6deg)';
+    };
+  });
+}
+
+function saveLayout() {
+  if (hasAppsScript()) {
+    google.script.run.withSuccessHandler(() => {
+      const now = new Date().toLocaleString('es-PE');
+      document.getElementById('lastSaved').textContent = `Último guardado: ${now}`;
+      setStatus('Layout guardado correctamente.');
+    }).saveLayoutData(state);
+
+    return;
+  }
+
+  localStorage.setItem('layoutData', JSON.stringify(state));
+
+  const now = new Date().toLocaleString('es-PE');
+  document.getElementById('lastSaved').textContent = `Último guardado local: ${now}`;
+  setStatus('Layout guardado correctamente en el navegador.');
+}
+
+function resetLayout() {
+  const ok = confirm('¿Deseas limpiar todo el layout?');
+
+  if (!ok) return;
+
+  state = buildEmptyState();
+
+  render();
+  init3DEffects();
+  setStatus('Layout reiniciado.');
+}
+
+function setStatus(text) {
+  document.getElementById('status').textContent = text;
+
+  setTimeout(() => {
+    document.getElementById('status').textContent = '';
+  }, 3200);
+}
+
+function renderLeaders() {
+  const container = document.getElementById('leaders');
+
+  if (!container || !config.leaders) return;
+
+  container.innerHTML = config.leaders.map((person, i) => `
+    <div class="leader-card">
+      <div class="leader-photo-wrap">
+        <img class="leader-photo" src="${person.photo}" alt="${person.name}">
+      </div>
+
+      <div class="leader-info">
+        <div class="leader-name">${person.name}</div>
+        <div class="leader-tag">RESPONSABLE ${String(i + 1).padStart(2, '0')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+loadApp();
