@@ -831,16 +831,18 @@
 
     style.textContent = `
       .layout {
-        grid-template-columns: repeat(14, minmax(185px, 1fr)) !important;
-        min-width: 2800px !important;
-      }
+  display: grid !important;
+  grid-template-columns: repeat(14, minmax(185px, 1fr)) !important;
+  gap: 14px !important;
+  min-width: 2800px !important;
+}
 
-      @media (min-width: 1600px) {
-        .layout {
-          grid-template-columns: repeat(14, minmax(210px, 1fr)) !important;
-          min-width: 3080px !important;
-        }
-      }
+@media (min-width: 1600px) {
+  .layout {
+    grid-template-columns: repeat(14, minmax(210px, 1fr)) !important;
+    min-width: 3080px !important;
+  }
+}
 
       .column-section {
         margin-bottom: 4px;
