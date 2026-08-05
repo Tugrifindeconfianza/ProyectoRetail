@@ -32,15 +32,29 @@ const makePhoto = (text) => {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 };
 
+const ROWS_BY_COLUMN = [
+  12, 12, 12, 12, 12, 12,
+  7,
+  12,
+  11, 11, 11, 11, 11, 11
+];
+
+const DEFAULT_STATUS = 'ARMADO';
+
 const fallbackConfig = {
-  columns: 7,
-  rows: 5,
-  statusOptions: ['PENDIENTE', 'EN PROGRESO', 'DESPACHADO'],
+  columns: 14,
+  rowsByColumn: ROWS_BY_COLUMN,
+  statusOptions: ['ARMADO', 'ETIQUETADO', 'AUDITORIA', 'REALIZADO'],
   clients: [
-    { id: 'cliente-1', name: 'Cliente 1', logo: makeLogo('Cliente 1') },
-    { id: 'cliente-2', name: 'Cliente 2', logo: makeLogo('Cliente 2') },
-    { id: 'cliente-3', name: 'Cliente 3', logo: makeLogo('Cliente 3') }
+    { id: 'promart', name: 'PROMART', logo: makeLogo('PROMART') },
+    { id: 'sodimac', name: 'SODIMAC', logo: makeLogo('SODIMAC') },
+    { id: 'cencosud', name: 'CENCOSUD', logo: makeLogo('CENCOSUD') },
+    { id: 'mayorsa', name: 'MAYORSA', logo: makeLogo('MAYORSA') },
+    { id: 'corp-vega', name: 'CORP. VEGA', logo: makeLogo('CORP. VEGA') },
+    { id: 'tottus', name: 'TOTTUS', logo: makeLogo('TOTTUS') },
+    { id: 'sspp', name: 'SSPP', logo: makeLogo('SSPP') }
   ],
+  leaders: []
 };
 
 function hasAppsScript() {
@@ -51,39 +65,49 @@ function hasAppsScript() {
 
 function normalizeConfig(cfg = {}) {
   return {
-    columns: cfg.columns || fallbackConfig.columns,
-    rows: cfg.rows || fallbackConfig.rows,
-    statusOptions: Array.isArray(cfg.statusOptions) ? cfg.statusOptions : fallbackConfig.statusOptions,
-    clients: Array.isArray(cfg.clients) ? cfg.clients : fallbackConfig.clients,
+    columns: fallbackConfig.columns,
+    rowsByColumn: fallbackConfig.rowsByColumn,
+    statusOptions: fallbackConfig.statusOptions,
+    clients: fallbackConfig.clients,
     leaders: Array.isArray(cfg.leaders) ? cfg.leaders : fallbackConfig.leaders
   };
 }
 
+function getRowsForColumn(colIndex) {
+  return config.rowsByColumn[colIndex];
+}
+
+function getColumnHeader(colIndex) {
+  return colIndex < 4 ? 'ARMADO' : 'DESPACHO';
+}
+
+function getDefaultStatus() {
+  return config.statusOptions[0] || DEFAULT_STATUS;
+}
+
 function buildEmptyState() {
-  return Array.from({ length: config.columns }, () =>
-    Array.from({ length: config.rows }, () => ({
+  return Array.from({ length: config.columns }, (_, c) =>
+    Array.from({ length: getRowsForColumn(c) }, () => ({
       clientId: '',
-      status: 'PENDIENTE'
+      status: getDefaultStatus()
     }))
   );
 }
 
 function normalizeState(saved) {
-  const empty = buildEmptyState();
-
-  if (!Array.isArray(saved) || saved.length !== config.columns) {
-    return empty;
+  if (!Array.isArray(saved)) {
+    return buildEmptyState();
   }
 
   return Array.from({ length: config.columns }, (_, c) => {
     const col = Array.isArray(saved[c]) ? saved[c] : [];
 
-    return Array.from({ length: config.rows }, (_, r) => {
+    return Array.from({ length: getRowsForColumn(c) }, (_, r) => {
       const cell = col[r] || {};
 
       return {
         clientId: cell.clientId || '',
-        status: config.statusOptions.includes(cell.status) ? cell.status : 'PENDIENTE'
+        status: config.statusOptions.includes(cell.status) ? cell.status : getDefaultStatus()
       };
     });
   });
@@ -172,8 +196,8 @@ function assignClient() {
       if (!ok) return;
     }
 
-    for (let r = 0; r < config.rows; r++) {
-      state[colIndex][r] = { clientId, status };
+    for (let r = 0; r < getRowsForColumn(colIndex); r++) {
+  state[colIndex][r] = { clientId, status };
     }
 
     render();
@@ -199,17 +223,21 @@ function assignClient() {
 }
 
 function statusClass(status) {
-  if (status === 'PENDIENTE') return 'pending';
-  if (status === 'EN PROGRESO') return 'progress';
-  if (status === 'DESPACHADO') return 'shipped';
+  if (status === 'ARMADO') return 'armado';
+  if (status === 'ETIQUETADO') return 'etiquetado';
+  if (status === 'AUDITORIA') return 'auditoria';
+  if (status === 'REALIZADO') return 'realizado';
   return 'empty';
 }
 
 function renderMetrics() {
-  const total = config.rows * config.columns;
-  const occupied = state.flat().filter(c => c.clientId).length;
+  const total = Array.from({ length: config.columns }, (_, i) => getRowsForColumn(i))
+    .reduce((sum, rows) => sum + rows, 0);
+
+  const allCells = state.flat();
+  const occupied = allCells.filter(c => c.clientId).length;
   const available = total - occupied;
-  const shipped = state.flat().filter(c => c.clientId && c.status === 'DESPACHADO').length;
+  const done = allCells.filter(c => c.clientId && c.status === 'REALIZADO').length;
 
   document.getElementById('metrics').innerHTML = `
     <div class="metric-card">
@@ -231,9 +259,9 @@ function renderMetrics() {
     </div>
 
     <div class="metric-card">
-      <div class="metric-label">DESPACHADAS</div>
-      <div class="metric-value">${shipped}</div>
-      <div class="metric-sub">Posiciones cerradas o listas</div>
+      <div class="metric-label">REALIZADAS</div>
+      <div class="metric-value">${done}</div>
+      <div class="metric-sub">Posiciones finalizadas</div>
     </div>
   `;
 }
@@ -244,9 +272,10 @@ function render() {
   const container = document.getElementById('layout');
   container.innerHTML = '';
 
-  for (let c = 0; c < config.columns; c++) {
-    const used = state[c].filter(cell => cell.clientId).length;
-    const progress = Math.round((used / config.rows) * 100);
+    for (let c = 0; c < config.columns; c++) {
+  const rowCount = getRowsForColumn(c);
+  const used = state[c].filter(cell => cell.clientId).length;
+  const progress = Math.round((used / rowCount) * 100);
 
     const col = document.createElement('div');
     col.className = 'column';
@@ -254,19 +283,23 @@ function render() {
     const header = document.createElement('div');
     header.className = 'column-header';
     header.innerHTML = `
-      <div class="column-top">
-        <div class="column-number">${String(c + 1).padStart(2, '0')}</div>
-        <div class="column-count">${used}/${config.rows}</div>
-      </div>
+  <div class="column-top">
+    <div>
+      <div class="column-stage">${getColumnHeader(c)}</div>
+      <div class="column-number">Columna ${String(c + 1).padStart(2, '0')}</div>
+    </div>
 
-      <div class="progress-track">
-        <div class="progress-fill" style="width:${progress}%"></div>
-      </div>
-    `;
+    <div class="column-count">${used}/${rowCount}</div>
+  </div>
+
+  <div class="progress-track">
+    <div class="progress-fill" style="width:${progress}%"></div>
+  </div>
+`;
 
     col.appendChild(header);
 
-    for (let r = 0; r < config.rows; r++) {
+    for (let r = 0; r < rowCount; r++) {
       const cellData = state[c][r];
       const cell = document.createElement('div');
       const cellStatusClass = cellData.clientId ? statusClass(cellData.status) : 'empty';
@@ -322,7 +355,7 @@ function openModal(c, r) {
     `Columna ${String(c + 1).padStart(2, '0')} · Posición ${String(r + 1).padStart(2, '0')}`;
 
   document.getElementById('modalClientSelect').value = cell.clientId || '';
-  document.getElementById('modalStatusSelect').value = cell.status || 'PENDIENTE';
+  document.getElementById('modalStatusSelect').value = cell.status || getDefaultStatus();
   document.getElementById('modalBackdrop').classList.add('show');
 }
 
@@ -345,7 +378,7 @@ function saveCellFromModal() {
   const { c, r } = selectedCell;
 
   if (!clientId) {
-    state[c][r] = { clientId: '', status: 'PENDIENTE' };
+    state[c][r] = { clientId: '', status: getDefaultStatus() };
   } else {
     state[c][r] = { clientId, status };
   }
@@ -361,7 +394,7 @@ function removeCellFromModal() {
 
   const { c, r } = selectedCell;
 
-  state[c][r] = { clientId: '', status: 'PENDIENTE' };
+  state[c][r] = { clientId: '', status: getDefaultStatus() };
 
   closeModal();
   render();
